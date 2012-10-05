@@ -16,7 +16,7 @@ public class InitiateProxyControllerCommand extends ControllerCommand {
       super();
    }
 
-   public InitiateProxyControllerCommand(Account account, Type type, String url) {
+   public InitiateProxyControllerCommand(Account account, ControllerCommandDTO.Type type, String url) {
       super(account, type);
       this.url = url;
       this.token = UUID.randomUUID().toString();

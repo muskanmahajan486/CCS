@@ -22,6 +22,7 @@ package org.openremote.controllercommand.service;
 import java.util.List;
 
 import org.openremote.controllercommand.domain.ControllerCommand;
+import org.openremote.controllercommand.domain.ControllerCommandDTO;
 import org.openremote.controllercommand.domain.InitiateProxyControllerCommand;
 import org.openremote.controllercommand.domain.User;
 
@@ -44,5 +45,7 @@ public interface ControllerCommandService {
    ControllerCommand findControllerCommandById(Long id);
 
    InitiateProxyControllerCommand saveProxyControllerCommand(User user, String url);
+
+  List<ControllerCommandDTO> queryByControllerOid(Long oid);
 
 }

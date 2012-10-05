@@ -1,48 +1,42 @@
 package org.openremote.controllercommand.resources;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import org.hibernate.criterion.DetachedCriteria;
-import org.hibernate.criterion.Restrictions;
-import org.openremote.controllercommand.GenericDAO;
 import org.openremote.controllercommand.domain.ControllerCommand;
-import org.openremote.controllercommand.domain.ControllerCommandDTO;
-import org.openremote.controllercommand.domain.DiscoveredDevice;
 import org.openremote.controllercommand.service.ControllerCommandService;
 import org.openremote.rest.GenericResourceResultWithErrorMessage;
 import org.restlet.ext.json.JsonRepresentation;
 import org.restlet.representation.Representation;
-import org.restlet.resource.Get;
+import org.restlet.resource.Delete;
 import org.restlet.resource.ServerResource;
 
 import flexjson.JSONSerializer;
 
-public class ControllerCommandsResource extends ServerResource
+public class ControllerCommandResource extends ServerResource
 {
 
   private ControllerCommandService controllerCommandService;
 
   /**
-   * Return a list of all not finished ControllerCommands<p>
-   * REST Url: /rest/commands/{controllerOid} -> return all not finished controller commands for the given controllerOid
+   * Mark the controllerCommand with the given id as DONE<p>
+   * REST Url: /rest/command/{commandId} 
    * 
-   * @return a List of ControllerCommand
+   * @return ResultObject with String "ok"
    */
-  @Get("json")
-  public Representation loadControllerCommands()
+  @Delete("json")
+  public Representation ackControllerCommands()
   {
     GenericResourceResultWithErrorMessage result = null;
     try
     {
-      String oid = (String) getRequest().getAttributes().get("controllerOid");
+      String oid = (String) getRequest().getAttributes().get("commandId");
       if (oid != null)
       {
         Long id = Long.valueOf(oid);
-        List<ControllerCommandDTO> commands = controllerCommandService.queryByControllerOid(id);
-        result = new GenericResourceResultWithErrorMessage(null, commands);
+        ControllerCommand controllerCommand = controllerCommandService.findControllerCommandById(id);
+        controllerCommandService.closeControllerCommand(controllerCommand);
+        controllerCommandService.update(controllerCommand);
+        result = new GenericResourceResultWithErrorMessage(null, "ok");
       } else {
-        result = new GenericResourceResultWithErrorMessage(null, new ArrayList<ControllerCommandDTO>());
+        result = new GenericResourceResultWithErrorMessage("command not found", null);
       }
     } catch (Exception e)
     {

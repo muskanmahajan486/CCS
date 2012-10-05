@@ -43,31 +43,9 @@ public class ControllerCommand extends BusinessEntity {
 	private Account account;
 	private Date creationDate;
 	private State state;
-	private Type type;
+	private ControllerCommandDTO.Type type;
 	
-	/**
-	 * The type of command. This is required because not every command needs a subclass
-	 * from which we can infer the type from.
-	 */
-	public enum Type {
-	   UPLOAD_LOGS, UPDATE_CONTROLLER, INITIATE_PROXY;
 
-	   /**
-	    * Gets a label for this type, this is useful for exporting. Label format is
-	    * name().replace("_", "-").toLowerCase().
-	    */
-      public String getLabel() {
-         return name().replace("_", "-").toLowerCase();
-      }
-
-      /**
-       * Gets a type from a label, this is useful for importing. Label format is
-       * name().replace("_", "-").toLowerCase().
-       */
-      public static Type fromLabel(String label) {
-         return valueOf(label.replace("-", "_").toUpperCase());
-      }
-	}
 	
 	/**
 	 * State of the command. They start as OPEN, then are marked as DONE when they have been treated by
@@ -80,7 +58,7 @@ public class ControllerCommand extends BusinessEntity {
 	public ControllerCommand() {
 	}
 
-	public ControllerCommand(Account account, Type type) {
+	public ControllerCommand(Account account, ControllerCommandDTO.Type type) {
 		this.account = account;
 		this.creationDate = new Date();
 		this.state = State.OPEN;
@@ -114,11 +92,11 @@ public class ControllerCommand extends BusinessEntity {
 	}
 
    @Enumerated(EnumType.STRING)
-   public Type getType() {
+   public ControllerCommandDTO.Type getType() {
       return type;
    }
 
-   public void setType(Type type) {
+   public void setType(ControllerCommandDTO.Type type) {
       this.type = type;
    }
 }

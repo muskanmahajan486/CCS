@@ -49,6 +49,7 @@
     <bean id="sessionFactory" class="org.springframework.orm.hibernate3.annotation.AnnotationSessionFactoryBean" parent="baseSessionFactory">
         <property name="annotatedClasses">
             <list>
+            	<value>org.openremote.controllercommand.domain.Controller</value>
                 <value>org.openremote.controllercommand.domain.Account</value>
                 <value>org.openremote.controllercommand.domain.User</value>
                 <value>org.openremote.controllercommand.domain.DiscoveredDevice</value>
@@ -86,6 +87,10 @@
     <bean name="router" class="org.restlet.ext.spring.SpringBeanRouter" />
     
     <bean name="/rest/commands/{controllerOid}" class="org.openremote.controllercommand.resources.ControllerCommandsResource" scope="prototype">
+    	<property name="controllerCommandService" ref="controllerCommandService" />
+    </bean>
+    
+    <bean name="/rest/command/{commandId}" class="org.openremote.controllercommand.resources.ControllerCommandResource" scope="prototype">
     	<property name="controllerCommandService" ref="controllerCommandService" />
     </bean>
 
