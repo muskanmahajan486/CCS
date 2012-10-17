@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
 	<classpathentry kind="src" output="war/WEB-INF/classes" path="src"/>
-	<classpathentry kind="src" path="config"/>
-	<classpathentry kind="src" path="test"/>
+	<classpathentry kind="src" output="war/WEB-INF/classes" path="config"/>
+	<classpathentry kind="src" output="war/WEB-INF/classes" path="test"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="lib" path="lib/core/restlet-jee-2.0.11/org.restlet.ext.servlet.jar"/>
 	<classpathentry kind="lib" path="lib/core/restlet-jee-2.0.11/org.restlet.jar"/>

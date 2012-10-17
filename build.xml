@@ -25,13 +25,13 @@ Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  |
  |  Author: Marcus Redeker
  +-->
-<project name="DeviceDiscoveryService" default="javac" basedir=".">
+<project name="ControllerProxyAndCommandService" default="javac" basedir=".">
 
 	<property file="build.local.properties"/>
 	<property file="build.properties"/>
 
 	<!-- Some base dir used -->
-	<property name="project.name" value="dds" />
+	<property name="project.name" value="ccs" />
 	<property name="lib.dir" value="lib" />
 	<property name="web-inf.dir" value="war/WEB-INF" />
 	<property name="src.dir" value="src"/>

@@ -168,7 +168,7 @@ public class ProxyClient extends Proxy {
                int read = srcSocket.read(srcBuffer);
                if(read == -1){
                   // we've reached EOF, drop this client
-                  throw new HTTPException(HttpURLConnection.HTTP_UNAUTHORIZED);
+                  throw new HTTPException(HttpURLConnection.HTTP_UNAUTHORIZED, false, false);
                }
                // did we read anything new?
                if(read == 0)
@@ -179,28 +179,43 @@ public class ProxyClient extends Proxy {
                   return user;
                // we don't have enough headers yet, but we must give up if we don't have room anymore in the buffer
                if(!srcBuffer.hasRemaining())
-                  throw new HTTPException(HttpURLConnection.HTTP_BAD_REQUEST);
+                  throw new HTTPException(HttpURLConnection.HTTP_BAD_REQUEST, false, false);
             }
          }
          // for a timeout or were halted we just close the connection upstream by throwing
          throw new IOException("Connection timed-out before we could read the authentication header");
       }catch(HTTPException x){
          // we must reply with an error
-         throw sendError(srcSocket, x.getStatus());
+         throw sendError(srcSocket, x.getStatus(), x.isJson(), x.isOptionsRequest());
       }
    }
 
-   private IOException sendError(SocketChannel srcSocket, int status) throws IOException {
+   private IOException sendError(SocketChannel srcSocket, int status, boolean json, boolean optionsRequest) throws IOException {
       // Construct the message
       String reason;
       String maybeHeader = "";
+      String body = "";
+      
+      maybeHeader = "Access-Control-Allow-Origin: *\r\n";
+      maybeHeader = maybeHeader + "Access-Control-Allow-Methods: GET, POST\r\n";
+      maybeHeader = maybeHeader + "Access-Control-Allow-Headers: origin, authorization, accept\r\n";
+      maybeHeader = maybeHeader + "Access-Control-Max-Age: 99999\r\n";
+      
       switch(status){
       case HttpURLConnection.HTTP_BAD_REQUEST:
          reason = "Bad request";
          break;
       case HttpURLConnection.HTTP_UNAUTHORIZED:
          reason = "Unauthorized";
-         maybeHeader = "WWW-Authenticate: Basic realm=\"OPENREMOTE_Beehive\"\r\n";
+         if (json) {
+           status = 200;
+           reason = "OK";
+           body = "{\"error\": {\"code\": 401,\"message\": \"Not Authorized\"}}";
+         } else {
+           if (!optionsRequest) {
+             maybeHeader = maybeHeader + "WWW-Authenticate: Basic realm=\"OPENREMOTE_Beehive\"\r\n";
+           }
+         }
          break;
       case HttpURLConnection.HTTP_FORBIDDEN:
          reason = "Forbidden";
@@ -208,10 +223,17 @@ public class ProxyClient extends Proxy {
       default:
          reason = "Unknown error";
       }
-      String response = "HTTP/1.1 "+status+" "+reason+"\r\n" + 
-         maybeHeader +
-         "Content-Length: 0\r\n" +
-         "\r\n";
+      if (optionsRequest) {
+        status = 200;
+        reason = "OK";
+      }
+      String response = "HTTP/1.1 "+status+" "+reason+"\r\n" + maybeHeader;
+      if (body.length() != 0) {
+        response = response +"Content-Length: " + body.length() + "\r\n";
+      } else {
+        response = response + "\r\n";
+      }
+      response = response + "\r\n" + body;
       srcBuffer.clear();
       srcBuffer.put(response.getBytes("ASCII"));
       srcBuffer.flip();
@@ -258,14 +280,26 @@ public class ProxyClient extends Proxy {
       // in any case, non-ASCII is after the end of headers, or since we haven't reached that yet, after the whole limit
       // so we can parse as ASCII characters
       String headers = new String(bytes, 0, headerEnd, Charset.forName("ASCII"));
+      boolean optionsRequest = false;
+      if (headers.startsWith("OPTIONS")) {
+        optionsRequest = true;
+      }
       // so do we have an Authentication header in there?
       Pattern pattern = Pattern.compile("\r\nAuthorization:([^\r\n]*)\r\n([^ \t])", Pattern.CASE_INSENSITIVE);
+      Pattern pattern2 = Pattern.compile("\r\nAccept:([^\r\n]*)\r\n([^ \t])", Pattern.CASE_INSENSITIVE);
       Matcher matcher = pattern.matcher(headers);
+      Matcher matcher2 = pattern2.matcher(headers);
+      boolean json = false;
+      if (matcher2.find()) {
+        if (matcher2.group(1).toLowerCase().indexOf("json") != -1) {
+          json = true;
+        }
+      }
       // nothing?
       if(!matcher.find()){
          if(headerEnd <= limit){
             // we have seen every header, and found no good one, let's quit
-            throw new HTTPException(HttpURLConnection.HTTP_UNAUTHORIZED);
+            throw new HTTPException(HttpURLConnection.HTTP_UNAUTHORIZED, json, optionsRequest);
          }
          // we haven't seen the end of headers yet, don't give up and read more
          return null;
@@ -278,7 +312,7 @@ public class ProxyClient extends Proxy {
       User user = getAccountService().loadByHTTPBasicCredentials(value);
       if(user == null){
          // authentication failed
-         throw new HTTPException(HttpURLConnection.HTTP_UNAUTHORIZED);
+         throw new HTTPException(HttpURLConnection.HTTP_UNAUTHORIZED, json, optionsRequest);
       }
       return user;
    }
