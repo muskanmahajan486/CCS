@@ -6,7 +6,7 @@
              http://www.springframework.org/schema/security http://www.springframework.org/schema/security/spring-security-3.1.xsd">
 
 	<security:http> <!-- note: no auto-config attribute! access="ROLE_MODELER,ROLE_DESIGNER" -->
-		<security:intercept-url pattern="/rest/*"
+		<security:intercept-url pattern="/rest/**"
 			access="ROLE_ADMIN" />
 		<security:http-basic />
 	</security:http>
