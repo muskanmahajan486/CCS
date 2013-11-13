@@ -1,30 +1,24 @@
 package org.openremote.controllercommand.proxy;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.channels.SelectionKey;
-import java.nio.channels.Selector;
-import java.nio.channels.SocketChannel;
-import java.util.Iterator;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.Socket;
 
 import org.apache.log4j.Logger;
 
 public abstract class Proxy extends Thread {
 
    private static Logger logger = Logger.getLogger(Proxy.class);
-   protected SocketChannel srcSocket;
+   protected Socket consoleSocket;
    protected boolean halted;
-   protected Selector selector;
-   protected ByteBuffer srcBuffer;
    protected int timeout;
+   protected byte[] consoleBuffer;
+   protected int consoleBytesRead;
 
-   public Proxy(SocketChannel clientSocket, int timeout) throws IOException {
-      this.srcSocket = clientSocket;
-      srcSocket.configureBlocking(false);
-      selector = Selector.open();
+   public Proxy(Socket clientSocket, int timeout) throws IOException {
+      this.consoleSocket = clientSocket;
       this.timeout = timeout;
-      // this one comes from src and goes to dst
-      srcBuffer = ByteBuffer.allocate(4096);
    }
 
    @Override
@@ -32,88 +26,91 @@ public abstract class Proxy extends Thread {
       try{
          logger.info("Client running");
          // we first need to connect to the endpoint
-         SocketChannel dstSocket;
+         Socket controllerSocket;
          try {
-            dstSocket = openDestinationSocket();
+           controllerSocket = openDestinationSocket();
          } catch (IOException e) {
             logger.error("Failed to connect to the destination", e);
             return;
          }
          try {
             logger.info("We got connection to the destination");
-            dstSocket.configureBlocking(false);
-            // did we already read something for dst?
-            if(srcBuffer.position() > 0){
-               srcBuffer.flip();
-               dstSocket.register(selector, SelectionKey.OP_READ | SelectionKey.OP_WRITE);
-               // we're not reading anymore from srcSocket until we've written it to dstSocket
-               srcSocket.register(selector, 0);
-            }else{
-               // initially we only read from both sides
-               dstSocket.register(selector, SelectionKey.OP_READ);
-               srcSocket.register(selector, SelectionKey.OP_READ);
-            }
-            // make a second buffer
-            // this one comes from dst and goes to src
-            ByteBuffer dstBuffer = ByteBuffer.allocate(4096);
-            // and loop until we're done
-            while(hasValidKeys(selector)){
-               logger.info("Selecting");
-               if(selector.select(timeout) == 0){
-                  logger.info("Timed out or halted");
-                  break;
-               }
-               if(halted){
-                  logger.info("Halted");
-                  break;
-               }
-               logger.info("Select done");
-               Iterator<SelectionKey> keys = selector.selectedKeys().iterator();
-               while(keys.hasNext()){
-                  SelectionKey key = keys.next();
-                  keys.remove();
-                  if(!key.isValid())
-                     continue;
-                  // first deal with operations on the src socket
-                  if(key.channel() == srcSocket){
-                     // are we reading from it for dst?
-                     if(key.isReadable()){
-                        read(srcSocket, srcBuffer, selector, key, dstSocket);
-                        // or are we writing to it from dst?
-                     }else if(key.isWritable()) {
-                        write(srcSocket, dstBuffer, selector, key, dstSocket);
-                     }
-                     // then deal with operations on the dst socket
-                  }else if(key.channel() == dstSocket) {
-                     // are we reading from it for src?
-                     if(key.isReadable()){
-                        read(dstSocket, dstBuffer, selector, key, srcSocket);
-                        // or are we writing on it from src?
-                     }else if(key.isWritable()) {
-                        write(dstSocket, srcBuffer, selector, key, srcSocket);
-                     }
+            final byte[] request = new byte[1024];
+            byte[] reply = new byte[4096];
+            
+            // Get client streams. Make them final so they can
+            // be used in the anonymous thread below.
+            final InputStream from_client = consoleSocket.getInputStream();
+            final OutputStream to_client = consoleSocket.getOutputStream();
+
+            // Get server streams.
+            final InputStream from_server = controllerSocket.getInputStream();
+            final OutputStream to_server = controllerSocket.getOutputStream();
+
+            //Write the HTTP request which was already read when checking the authentication header
+            to_server.write(consoleBuffer, 0, consoleBytesRead);
+            to_server.flush();
+
+            // Make a thread to read the client's requests and pass them
+            // to the server. We have to use a separate thread because
+            // requests and responses may be asynchronous.
+            Thread t = new Thread() {
+              public void run() {
+                int bytes_read;
+                try {
+                  while ((bytes_read = from_client.read(request)) != -1) {
+                    to_server.write(request, 0, bytes_read);
+                    to_server.flush();
                   }
-                  // remove empty keys
-                  if(key.interestOps() == 0){
-                     logger.info("No more ops for "+key.channel());
-                     key.cancel();
-                  }
-               }
+                } catch (IOException e) {
+                  e.printStackTrace();
+                }
+
+                // the client closed the connection to us, so close our
+                // connection to the server. This will also cause the
+                // server-to-client loop in the main thread exit.
+                try {
+                  to_server.close();
+                } catch (IOException e) {
+                  
+                }
+              }
+            };
+
+            // Start the client-to-server request thread running
+            t.start();
+
+            // Meanwhile, in the main thread, read the server's responses
+            // and pass them back to the client. This will be done in
+            // parallel with the client-to-server request thread above.
+            int bytes_read;
+            try {
+              while ((bytes_read = from_server.read(reply)) != -1) {
+                to_client.write(reply, 0, bytes_read);
+                to_client.flush();
+              }
+            } catch (IOException e) {
             }
+
+            // The server closed its connection to us, so we close our
+            // connection to our client.
+            // This will make the other thread exit.
+            to_client.close();
+            
             logger.info("Done with proxying");
          } catch (Exception e) {
             logger.error("Proxy dead", e);
          }finally{
             // close the dst socket
             try {
-               dstSocket.close();
+              controllerSocket.close();
             } catch (IOException x) {
             }
          }
       }finally{
          // close the src socket
          try {
-            srcSocket.close();
+            consoleSocket.close();
          } catch (IOException x) {
          }
          onProxyExit();
@@ -122,86 +119,11 @@ public abstract class Proxy extends Thread {
 
    protected void onProxyExit() {}
 
-   protected abstract SocketChannel openDestinationSocket() throws IOException;
+   protected abstract Socket openDestinationSocket() throws IOException;
 
-   private boolean hasValidKeys(Selector selector) {
-      for(SelectionKey key : selector.keys()){
-         if(key.isValid() && key.interestOps() != 0)
-            return true;
-      }
-      return false;
-   }
-
-   private void write(SocketChannel dstSocket, ByteBuffer buffer,
-         Selector selector, SelectionKey dstKey, SocketChannel srcSocket) throws IOException {
-      logger.info("Writing to "+dstSocket);
-      dstSocket.write(buffer);
-      // did we write everything?
-      if(!buffer.hasRemaining()){
-         logger.info("Wrote everything, now start reading, input shutdown: "+srcSocket.socket().isInputShutdown()
-               +", buffer open: "+srcSocket.isOpen()
-               +", socket closed: "+srcSocket.socket().isClosed());
-         // stop writing to src and start reading from dst
-         buffer.clear();
-         // reset they WRITE registration on dstSocket
-         dstKey.interestOps(dstKey.interestOps() ^ SelectionKey.OP_WRITE);
-         // add the READ registration on srcSocket
-         SelectionKey srcKey = srcSocket.keyFor(selector);
-         if(srcKey != null)
-            srcKey.interestOps(srcKey.interestOps() | SelectionKey.OP_READ);
-         else
-            srcSocket.register(selector, SelectionKey.OP_READ);
-      }else{
-         // else keep writing
-         logger.info("Wrote some, but "+buffer.remaining()+" left to write, keep on writing");
-      }
-   }
-
-   private void read(SocketChannel srcSocket, ByteBuffer buffer,
-         Selector selector, SelectionKey srcKey, SocketChannel dstSocket) throws IOException {
-      logger.info("Reading from "+srcSocket);
-      int read = srcSocket.read(buffer);
-      if(read == -1){
-         logger.info("Read EOF, stop reading");
-         // stop reading from this socket
-         stopReadingFromSocket(srcSocket, srcKey, dstSocket);
-         return;
-      }
-      // did we read anything?
-      if(read > 0){
-         logger.info("Read "+read+" bytes, start writing");
-         // then stop reading from src and start writing to dst
-         buffer.flip();
-         // reset the READ registration on srcSocket
-         srcKey.interestOps(srcKey.interestOps() ^ SelectionKey.OP_READ);
-         // add the WRITE registration on dstSocket
-         SelectionKey dstKey = dstSocket.keyFor(selector);
-         if(dstKey != null)
-            dstKey.interestOps(dstKey.interestOps() | SelectionKey.OP_WRITE);
-         else
-            dstSocket.register(selector, SelectionKey.OP_WRITE);
-      }else{
-         // else keep reading
-         logger.info("Did not read any bytes, keep reading");
-      }
-   }
-
-   private void stopReadingFromSocket(SocketChannel srcSocket,
-         SelectionKey srcKey, SocketChannel dstSocket) throws IOException {
-      // reset the READ registration on srcSocket
-      srcKey.interestOps(srcKey.interestOps() ^ SelectionKey.OP_READ);
-      try{
-         srcSocket.socket().shutdownInput();
-      }catch(IOException x){
-         logger.info("Failed to shutdown input after EOF, no problem");
-      }
-      // and also shutdown the writing side on dstSocket to forward the EOF
-      dstSocket.socket().shutdownOutput();
-   }
 
    public void halt() {
       halted = true;
-      selector.wakeup();
    }
 
 }
