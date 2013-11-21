@@ -147,6 +147,15 @@ public class ProxyClient extends Proxy {
               // we've reached EOF, drop this client
               throw new HTTPException(HttpURLConnection.HTTP_UNAUTHORIZED, false, false);
            }
+           
+           /* We read some more if we only receive 1 byte
+            * see here: http://stackoverflow.com/questions/9358424/java-ssl-chrome-firefox-sends-g-in-http-header-instead-of-get-http-1-1
+            */
+           if (consoleBytesRead == 1) {
+             consoleBytesRead = consoleSocket.getInputStream().read(consoleBuffer,1, 4096);
+             consoleBytesRead+=1;
+           }
+           
            // we have new data, let's look at it
            User user = getAuthenticatedUser(consoleBuffer, consoleBytesRead);
            if(user != null) {
