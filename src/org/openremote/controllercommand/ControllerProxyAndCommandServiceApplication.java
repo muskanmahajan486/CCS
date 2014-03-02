@@ -9,9 +9,9 @@ public class ControllerProxyAndCommandServiceApplication extends Application
 {
 
   public ControllerProxyAndCommandServiceApplication(String proxyHostname, Integer proxyTimeout, Integer proxyPort, 
-          String proxyClientPortRange, ControllerCommandService controllerCommandService, AccountService accountService)
+          String proxyClientPortRange, Boolean useSSL, String keystore, String keystorePassword, ControllerCommandService controllerCommandService, AccountService accountService)
   {
-    ProxyServer ps = new ProxyServer(proxyHostname, proxyTimeout, proxyPort, proxyClientPortRange, controllerCommandService, accountService);
+    ProxyServer ps = new ProxyServer(proxyHostname, proxyTimeout, proxyPort, proxyClientPortRange, useSSL, keystore, keystorePassword, controllerCommandService, accountService);
     ps.start();
   }
 
