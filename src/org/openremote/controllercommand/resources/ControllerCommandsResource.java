@@ -3,12 +3,7 @@ package org.openremote.controllercommand.resources;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.hibernate.criterion.DetachedCriteria;
-import org.hibernate.criterion.Restrictions;
-import org.openremote.controllercommand.GenericDAO;
-import org.openremote.controllercommand.domain.ControllerCommand;
 import org.openremote.controllercommand.domain.ControllerCommandDTO;
-import org.openremote.controllercommand.domain.DiscoveredDevice;
 import org.openremote.controllercommand.service.ControllerCommandService;
 import org.openremote.rest.GenericResourceResultWithErrorMessage;
 import org.restlet.ext.json.JsonRepresentation;
