@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import org.hibernate.FetchMode;
 import org.hibernate.criterion.DetachedCriteria;
 import org.hibernate.criterion.Order;
 import org.hibernate.criterion.Restrictions;
@@ -34,6 +35,7 @@ import org.openremote.controllercommand.domain.InitiateProxyControllerCommand;
 import org.openremote.controllercommand.domain.User;
 import org.openremote.controllercommand.domain.ControllerCommand.State;
 import org.openremote.controllercommand.service.ControllerCommandService;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
@@ -71,12 +73,22 @@ public class ControllerCommandServiceImpl implements ControllerCommandService
   @Override
   public List<ControllerCommandDTO> queryByControllerOid(Long oid)
   {
-    Controller controller = genericDAO.getById(Controller.class, oid);
+	String username = SecurityContextHolder.getContext().getAuthentication().getName();
+    User u = genericDAO.getByNonIdField(User.class, "username", username);
+
+    DetachedCriteria c = DetachedCriteria.forClass(Controller.class).add(Restrictions.eq("oid", oid)).setFetchMode("account.users", FetchMode.JOIN);
+    Controller controller = genericDAO.findOneByDetachedCriteria(c);
+
     if (controller == null)
     {
       return Collections.emptyList();
     }
 
+    // Only return commands if the user making the request has access to the account linked to the controller
+    if (!controller.getAccount().getUsers().contains(u)) {
+    	return Collections.emptyList();
+    }
+    
     // we want all open controller commands for this account by creation date
     DetachedCriteria criteria = DetachedCriteria.forClass(ControllerCommand.class).add(Restrictions.eq("account", controller.getAccount())).add(
             Restrictions.eq("state", State.OPEN)).addOrder(Order.asc("creationDate"));

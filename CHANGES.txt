@@ -1,0 +1,4 @@
+AccountLimitFix
+===============
+
+  - Only return controller commands the user making the request has access to
