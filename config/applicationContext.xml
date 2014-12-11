@@ -79,6 +79,9 @@
         <constructor-arg><value>${proxy.timeout}</value></constructor-arg>
         <constructor-arg><value>${proxy.port}</value></constructor-arg>
         <constructor-arg><value>${proxy.clientPortRange}</value></constructor-arg>
+        <constructor-arg><value>${proxy.useSSL}</value></constructor-arg>
+        <constructor-arg><value>${proxy.keystore}</value></constructor-arg>
+        <constructor-arg><value>${proxy.keystorePassword}</value></constructor-arg>
         <constructor-arg ref="controllerCommandService"/>
         <constructor-arg ref="accountService" />
         <property name="root" ref="router"/>
