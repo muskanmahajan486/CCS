@@ -1,8 +1,11 @@
 CCS Pro 1.1.0
 =============
 
+New features:
+ - Change ControllerProxyAndCommandService to use plain sockets instead of nio and add SSL support (MODELER-519)
+
 Fixes:
-  - Remove IR related library, not used in this project
+ - Remove IR related library, not used in this project
 
 CCS Pro 1.0.13
 ==============
