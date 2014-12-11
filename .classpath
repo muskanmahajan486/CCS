@@ -7,9 +7,6 @@
 	<classpathentry kind="lib" path="lib/core/restlet-jee-2.0.11/org.restlet.ext.servlet.jar"/>
 	<classpathentry kind="lib" path="lib/core/restlet-jee-2.0.11/org.restlet.jar"/>
 	<classpathentry kind="lib" path="lib/core/restlet-jee-2.0.11/org.restlet.ext.fileupload.jar"/>
-	<classpathentry kind="lib" path="lib/core/irfileslib/ircodeslib-1.0-SNAPSHOT.jar"/>
-	<classpathentry kind="lib" path="lib/core/irfileslib/irfileslib-1.0-SNAPSHOT.jar"/>
-	<classpathentry kind="lib" path="lib/core/irfileslib/tinsysfwk-1.0-SNAPSHOT.jar"/>
 	<classpathentry kind="lib" path="lib/core/restlet-jee-2.0.11/org.restlet.ext.spring.jar"/>
 	<classpathentry kind="lib" path="lib/core/restlet-jee-2.0.11/org.restlet.ext.json.jar"/>
 	<classpathentry kind="lib" path="lib/core/org.json_2.0/org.json.jar"/>

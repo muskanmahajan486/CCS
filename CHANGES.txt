@@ -1,5 +1,11 @@
+CCS Pro 1.1.0
+=============
+
+Fixes:
+  - Remove IR related library, not used in this project
+
 CCS Pro 1.0.13
 ==============
 
-Bug fixes:
+Fixes:
  - Only return controller commands the user making the request has access to
