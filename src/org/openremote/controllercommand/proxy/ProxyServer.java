@@ -103,7 +103,6 @@ public class ProxyServer extends Thread
 
     if (useSSL)
     {
-      System.setProperty("javax.net.debug", "all");
       // Specifying the Keystore details
       logger.info("Load keystore: " + this.keystore);
       try
