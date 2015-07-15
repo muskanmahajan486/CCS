@@ -55,20 +55,6 @@ public class ControllerCommandServiceImpl implements ControllerCommandService
     genericDAO.save(c);
   }
 
-  private List<ControllerCommand> queryByUsername(String username)
-  {
-    User u = genericDAO.getByNonIdField(User.class, "username", username);
-    if (u == null)
-      return Collections.emptyList();
-
-    // we want all open controller commands for this account by creation date
-    DetachedCriteria criteria = DetachedCriteria.forClass(ControllerCommand.class).add(Restrictions.eq("account", u.getAccount())).add(
-            Restrictions.eq("state", State.OPEN)).addOrder(Order.asc("creationDate"));
-
-    List<ControllerCommand> list = genericDAO.findByDetachedCriteria(criteria);
-    return list;
-  }
-
   @Override
   public List<ControllerCommandDTO> queryByControllerOid(Long oid)
   {
