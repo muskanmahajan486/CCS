@@ -44,24 +44,21 @@ public class AccountServiceImpl implements AccountService {
      this.genericDAO = genericDAO;
   }
   
-   @Override
    @Transactional
-   public void save(Account a) {
+   private void save(Account a) {
       genericDAO.save(a);
    }
 
-   @Override
-   public User loadByUsername(String username) {
+   private User loadByUsername(String username) {
       return genericDAO.getByNonIdField(User.class, "username", username);
    }
    
-   public long queryAccountIdByUsername(String username) {
+   private long queryAccountIdByUsername(String username) {
       User u = genericDAO.getByNonIdField(User.class, "username", username);
       return u == null ? 0L : u.getAccount().getOid();
    }
 
-   @Override
-   public boolean isHTTPBasicAuthorized(long accountId, String credentials, boolean isPasswordEncoded) {
+   private boolean isHTTPBasicAuthorized(long accountId, String credentials, boolean isPasswordEncoded) {
       if (credentials != null && credentials.startsWith(HTTP_BASIC_AUTH_HEADER_VALUE_PREFIX)) {
          credentials = credentials.replaceAll(HTTP_BASIC_AUTH_HEADER_VALUE_PREFIX, "");
          credentials = new String(Base64.decodeBase64(credentials.getBytes()));
@@ -86,13 +83,11 @@ public class AccountServiceImpl implements AccountService {
       return false;
    }
 
-   @Override
-   public boolean isHTTPBasicAuthorized(long accountId, String credentials) {
+   private boolean isHTTPBasicAuthorized(long accountId, String credentials) {
       return isHTTPBasicAuthorized(accountId, credentials, true);
    }
 
-   @Override
-   public boolean isHTTPBasicAuthorized(String username, String credentials, boolean isPasswordEncoded) {
+   private boolean isHTTPBasicAuthorized(String username, String credentials, boolean isPasswordEncoded) {
       return isHTTPBasicAuthorized(queryAccountIdByUsername(username), credentials, isPasswordEncoded);
    }
 

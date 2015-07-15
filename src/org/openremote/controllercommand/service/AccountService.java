@@ -19,7 +19,6 @@
 */
 package org.openremote.controllercommand.service;
 
-import org.openremote.controllercommand.domain.Account;
 import org.openremote.controllercommand.domain.User;
 
 /**
@@ -29,19 +28,7 @@ import org.openremote.controllercommand.domain.User;
  *
  */
 public interface AccountService {
-   
-   void save(Account a);
-   
-   User loadByUsername(String username);
-   
-   User loadByHTTPBasicCredentials(String credentials);
-   
-   boolean isHTTPBasicAuthorized(long accountId, String credentials);
-   
-   boolean isHTTPBasicAuthorized(long accountId, String credentials, boolean isPasswordEncoded);
-   
-   boolean isHTTPBasicAuthorized(String username, String credentials, boolean isPasswordEncoded);
 
-   long queryAccountIdByUsername(String username);
+   User loadByHTTPBasicCredentials(String credentials);
 
 }
