@@ -55,8 +55,7 @@ public class ControllerCommandServiceImpl implements ControllerCommandService
     genericDAO.save(c);
   }
 
-  @Override
-  public List<ControllerCommand> queryByUsername(String username)
+  private List<ControllerCommand> queryByUsername(String username)
   {
     User u = genericDAO.getByNonIdField(User.class, "username", username);
     if (u == null)

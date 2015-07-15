@@ -38,8 +38,6 @@ public interface ControllerCommandService {
 
    void update(ControllerCommand controllerCommand);
 
-   List<ControllerCommand> queryByUsername(String username);
-
    void closeControllerCommand(ControllerCommand controllerCommand);
 
    ControllerCommand findControllerCommandById(Long id);
