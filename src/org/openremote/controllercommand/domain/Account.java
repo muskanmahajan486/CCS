@@ -19,7 +19,6 @@
  */
 package org.openremote.controllercommand.domain;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import javax.persistence.Entity;
@@ -41,20 +40,9 @@ public class Account extends BusinessEntity
   /** The users. */
   private List<User> users;
 
-  /** The devices. */
-  private List<DiscoveredDevice> discoverdDevices;
-
   /** The controllers this account is linked to */
   private List<Controller> controllers;
   
-  /**
-   * Instantiates a new account.
-   */
-  public Account()
-  {
-    discoverdDevices = new ArrayList<DiscoveredDevice>();
-  }
-
   @OneToMany(mappedBy = "account")
   public List<User> getUsers()
   {
@@ -64,17 +52,6 @@ public class Account extends BusinessEntity
   public void setUsers(List<User> users)
   {
     this.users = users;
-  }
-
-  @OneToMany(mappedBy = "account")
-  public List<DiscoveredDevice> getDiscoverdDevices()
-  {
-    return discoverdDevices;
-  }
-
-  public void setDiscoverdDevices(List<DiscoveredDevice> discoverdDevices)
-  {
-    this.discoverdDevices = discoverdDevices;
   }
 
   @OneToMany(mappedBy = "account")  
@@ -88,17 +65,6 @@ public class Account extends BusinessEntity
     this.controllers = controllers;
   }
   
-  /**
-   * Adds a discovered device.
-   * 
-   * @param device
-   *          the discovered device
-   */
-  public void addDevice(DiscoveredDevice device)
-  {
-    discoverdDevices.add(device);
-  }
-
   @Override
   public int hashCode()
   {

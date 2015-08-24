@@ -21,11 +21,9 @@ package org.openremote.controllercommand.service.impl;
 
 import org.apache.commons.codec.binary.Base64;
 import org.openremote.controllercommand.GenericDAO;
-import org.openremote.controllercommand.domain.Account;
 import org.openremote.controllercommand.domain.User;
 import org.openremote.controllercommand.service.AccountService;
 import org.springframework.security.authentication.encoding.Md5PasswordEncoder;
-import org.springframework.transaction.annotation.Transactional;
 
 
 /**
@@ -43,57 +41,9 @@ public class AccountServiceImpl implements AccountService {
   public void setGenericDAO(GenericDAO genericDAO) {
      this.genericDAO = genericDAO;
   }
-  
-   @Override
-   @Transactional
-   public void save(Account a) {
-      genericDAO.save(a);
-   }
 
-   @Override
-   public User loadByUsername(String username) {
+   private User loadByUsername(String username) {
       return genericDAO.getByNonIdField(User.class, "username", username);
-   }
-   
-   public long queryAccountIdByUsername(String username) {
-      User u = genericDAO.getByNonIdField(User.class, "username", username);
-      return u == null ? 0L : u.getAccount().getOid();
-   }
-
-   @Override
-   public boolean isHTTPBasicAuthorized(long accountId, String credentials, boolean isPasswordEncoded) {
-      if (credentials != null && credentials.startsWith(HTTP_BASIC_AUTH_HEADER_VALUE_PREFIX)) {
-         credentials = credentials.replaceAll(HTTP_BASIC_AUTH_HEADER_VALUE_PREFIX, "");
-         credentials = new String(Base64.decodeBase64(credentials.getBytes()));
-         String[] arr = credentials.split(":");
-         if (arr.length == 2) {
-            String username = arr[0];
-            String password = arr[1];
-            long accId = queryAccountIdByUsername(username);
-            if (accId == 0L || accId != accountId) {
-               return false;
-            }
-            User user = loadByUsername(username);
-            if (!isPasswordEncoded) {
-               password = new Md5PasswordEncoder().encodePassword(password, username);
-            }
-            if (user != null && user.getPassword().equals(password)) {
-               return true;
-            }
-         }
-      }
-
-      return false;
-   }
-
-   @Override
-   public boolean isHTTPBasicAuthorized(long accountId, String credentials) {
-      return isHTTPBasicAuthorized(accountId, credentials, true);
-   }
-
-   @Override
-   public boolean isHTTPBasicAuthorized(String username, String credentials, boolean isPasswordEncoded) {
-      return isHTTPBasicAuthorized(queryAccountIdByUsername(username), credentials, isPasswordEncoded);
    }
 
    @Override
