@@ -52,8 +52,6 @@
             	<value>org.openremote.controllercommand.domain.Controller</value>
                 <value>org.openremote.controllercommand.domain.Account</value>
                 <value>org.openremote.controllercommand.domain.User</value>
-                <value>org.openremote.controllercommand.domain.DiscoveredDevice</value>
-                <value>org.openremote.controllercommand.domain.DiscoveredDeviceAttr</value>
                 <value>org.openremote.controllercommand.domain.ControllerCommand</value>
                 <value>org.openremote.controllercommand.domain.InitiateProxyControllerCommand</value>
             </list>
