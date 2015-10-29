@@ -95,4 +95,8 @@
     	<property name="controllerCommandService" ref="controllerCommandService" />
     </bean>
 
+    <bean name="/rest/command" class="org.openremote.controllercommand.resources.ControllerCommandResource" scope="prototype">
+    	<property name="controllerCommandService" ref="controllerCommandService" />
+    </bean>
+    
 </beans>
