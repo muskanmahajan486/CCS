@@ -29,6 +29,8 @@ import org.openremote.controllercommand.domain.User;
  */
 public interface AccountService {
 
-   User loadByHTTPBasicCredentials(String credentials);
+  User loadByUsername(String username);
+
+  User loadByHTTPBasicCredentials(String credentials);
 
 }
