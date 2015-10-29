@@ -1,3 +1,8 @@
+CCS-2
+=====
+
+ - Add API to post a command to the queue
+
 CCS Pro 1.1.0
 =============
 
