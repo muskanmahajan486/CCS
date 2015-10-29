@@ -42,7 +42,8 @@ public class AccountServiceImpl implements AccountService {
      this.genericDAO = genericDAO;
   }
 
-   private User loadByUsername(String username) {
+  @Override
+   public User loadByUsername(String username) {
       return genericDAO.getByNonIdField(User.class, "username", username);
    }
 
