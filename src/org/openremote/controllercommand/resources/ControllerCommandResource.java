@@ -2,6 +2,8 @@ package org.openremote.controllercommand.resources;
 
 import java.io.IOException;
 
+import javax.servlet.http.HttpServletRequest;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.openremote.controllercommand.domain.Account;
@@ -12,14 +14,15 @@ import org.openremote.controllercommand.domain.User;
 import org.openremote.controllercommand.service.AccountService;
 import org.openremote.controllercommand.service.ControllerCommandService;
 import org.openremote.rest.GenericResourceResultWithErrorMessage;
+import org.restlet.Request;
 import org.restlet.data.MediaType;
 import org.restlet.data.Status;
 import org.restlet.ext.json.JsonRepresentation;
+import org.restlet.ext.servlet.ServletUtils;
 import org.restlet.representation.Representation;
 import org.restlet.resource.Delete;
 import org.restlet.resource.Post;
 import org.restlet.resource.ServerResource;
-import org.springframework.security.core.context.SecurityContextHolder;
 
 import flexjson.JSONSerializer;
 
@@ -70,7 +73,11 @@ public class ControllerCommandResource extends ServerResource
     if (!MediaType.APPLICATION_JSON.equals(data.getMediaType(), true)) {
       return generateErrorResponse(Status.CLIENT_ERROR_UNSUPPORTED_MEDIA_TYPE, "Only JSON payload are supported");
     }
-    String username = SecurityContextHolder.getContext().getAuthentication().getName();
+    
+    Request restletRequest = getRequest();
+    HttpServletRequest servletRequest = ServletUtils.getRequest(restletRequest);
+    String username = servletRequest.getUserPrincipal().getName();
+    
     User user = accountService.loadByUsername(username);
     Account account = user.getAccount();
     

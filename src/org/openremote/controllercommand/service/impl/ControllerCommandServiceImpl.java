@@ -35,7 +35,6 @@ import org.openremote.controllercommand.domain.InitiateProxyControllerCommand;
 import org.openremote.controllercommand.domain.User;
 import org.openremote.controllercommand.domain.ControllerCommand.State;
 import org.openremote.controllercommand.service.ControllerCommandService;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
@@ -56,9 +55,8 @@ public class ControllerCommandServiceImpl implements ControllerCommandService
   }
 
   @Override
-  public List<ControllerCommandDTO> queryByControllerOid(Long oid)
+  public List<ControllerCommandDTO> queryByControllerOidForUser(Long oid, String username)
   {
-	String username = SecurityContextHolder.getContext().getAuthentication().getName();
     User u = genericDAO.getByNonIdField(User.class, "username", username);
 
     DetachedCriteria c = DetachedCriteria.forClass(Controller.class).add(Restrictions.eq("oid", oid)).setFetchMode("account.users", FetchMode.JOIN);

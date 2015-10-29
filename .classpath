@@ -37,10 +37,6 @@
 	<classpathentry kind="lib" path="lib/core/spring/org.springframework.jdbc-3.1.1.RELEASE.jar"/>
 	<classpathentry kind="lib" path="lib/core/spring/org.springframework.transaction-3.1.1.RELEASE.jar"/>
 	<classpathentry kind="lib" path="lib/core/spring/org.springframework.web-3.1.1.RELEASE.jar"/>
-	<classpathentry kind="lib" path="lib/core/spring/spring-security-acl-3.1.0.RELEASE.jar"/>
-	<classpathentry kind="lib" path="lib/core/spring/spring-security-config-3.1.0.RELEASE.jar"/>
-	<classpathentry kind="lib" path="lib/core/spring/spring-security-core-3.1.0.RELEASE.jar"/>
-	<classpathentry kind="lib" path="lib/core/spring/spring-security-web-3.1.0.RELEASE.jar"/>
 	<classpathentry kind="lib" path="lib/core/spring/org.springframework.orm-3.1.1.RELEASE.jar"/>
 	<classpathentry kind="lib" path="lib/core/dom4j/dom4j-1.6.1.jar"/>
 	<classpathentry kind="lib" path="lib/core/cglib/cglib-2.1.3.jar"/>
@@ -48,5 +44,7 @@
 	<classpathentry kind="lib" path="lib/test/junit/junit-4.10.jar"/>
 	<classpathentry kind="lib" path="lib/core/flexjson-2.1/flexjson-2.1.jar"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/ORCommons"/>
+	<classpathentry kind="lib" path="lib/compile/javax.servlet.jar"/>
+	<classpathentry kind="lib" path="lib/core/spring/spring-security-core-3.1.0.RELEASE.jar"/>
 	<classpathentry kind="output" path="war/WEB-INF/classes"/>
 </classpath>
