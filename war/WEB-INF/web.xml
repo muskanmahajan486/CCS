@@ -32,4 +32,66 @@
     <url-pattern>/*</url-pattern>
   </servlet-mapping>
 
+    <!--
+  =================================================================================================
+
+    Security Configuration
+
+    This configuration section establishes role-based access to (by default) all of the CCS resources.
+    Each resource access requires at minimum a basic authentication to access.
+
+  =================================================================================================
+  -->
+
+
+  <security-constraint>
+
+    <display-name>Controller Proxy And Command Service Security</display-name>
+
+    <!--
+         Defines an URL pattern to include all resource access to CCS.
+         The HTTP method elements are not included meaning all HTTP requests must conform
+         to the configured security constraints...
+    -->
+    <web-resource-collection>
+
+      <web-resource-name>All Service Access to CCS</web-resource-name>
+
+      <description>
+        This configuration constraints all HTTP method access to all of the CCS resources.
+      </description>
+
+      <url-pattern>/*</url-pattern>
+
+    </web-resource-collection>
+
+
+    <!-- User roles required to access CCS resources... -->
+
+    <auth-constraint>
+      <role-name>ROLE_ADMIN</role-name>
+    </auth-constraint>
+
+  </security-constraint>
+
+
+  <!-- At minimum, require HTTP Basic authorization... -->
+
+  <login-config>
+    <auth-method>BASIC</auth-method>
+    <realm-name>ControllerProxyAndCommandService</realm-name>
+  </login-config>
+
+  <!-- Define the security roles... -->
+
+  <security-role>
+
+    <description>
+      ROLE_ADMIN is the administrator role for a specific account (it's the account owner).
+    </description>
+
+    <role-name>ROLE_ADMIN</role-name>
+
+  </security-role>
+  
 </web-app>
