@@ -3,16 +3,23 @@ package org.openremote.controllercommand.resources;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.servlet.http.HttpServletRequest;
+
 import org.openremote.controllercommand.domain.ControllerCommandDTO;
 import org.openremote.controllercommand.service.ControllerCommandService;
 import org.openremote.rest.GenericResourceResultWithErrorMessage;
+import org.restlet.Request;
 import org.restlet.ext.json.JsonRepresentation;
+import org.restlet.ext.servlet.ServletUtils;
 import org.restlet.representation.Representation;
 import org.restlet.resource.Get;
 import org.restlet.resource.ServerResource;
 
 import flexjson.JSONSerializer;
 
+/**
+ * @author <a href="mailto:eric@openremote.org">Eric Bariaux</a>
+ */
 public class ControllerCommandsResource extends ServerResource
 {
 
@@ -34,7 +41,12 @@ public class ControllerCommandsResource extends ServerResource
       if (oid != null)
       {
         Long id = Long.valueOf(oid);
-        List<ControllerCommandDTO> commands = controllerCommandService.queryByControllerOid(id);
+        
+        Request restletRequest = getRequest();
+        HttpServletRequest servletRequest = ServletUtils.getRequest(restletRequest);
+        String username = servletRequest.getUserPrincipal().getName();
+
+        List<ControllerCommandDTO> commands = controllerCommandService.queryByControllerOidForUser(id, username);
         result = new GenericResourceResultWithErrorMessage(null, commands);
       } else {
         result = new GenericResourceResultWithErrorMessage(null, new ArrayList<ControllerCommandDTO>());

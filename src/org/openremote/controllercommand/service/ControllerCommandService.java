@@ -30,6 +30,7 @@ import org.openremote.controllercommand.domain.User;
  * Account service.
  * 
  * @author Stef Epardaud
+ * @author <a href="mailto:eric@openremote.org">Eric Bariaux</a>
  *
  */
 public interface ControllerCommandService {
@@ -44,6 +45,6 @@ public interface ControllerCommandService {
 
    InitiateProxyControllerCommand saveProxyControllerCommand(User user, String url);
 
-  List<ControllerCommandDTO> queryByControllerOid(Long oid);
+  List<ControllerCommandDTO> queryByControllerOidForUser(Long oid, String username);
 
 }
