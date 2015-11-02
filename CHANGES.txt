@@ -1,3 +1,8 @@
+CCS-3
+=====
+
+ - Use Servlet security instead of Spring Security
+
 CCS-2
 =====
 
