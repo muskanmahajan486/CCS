@@ -1,0 +1,41 @@
+apply plugin: "java"
+apply plugin: "war"
+
+// TODO Must compile with JDK 1.7 http://www.draconianoverlord.com/2014/04/01/jdk-compatibility.html
+sourceCompatibility = 1.7
+version = projectVersion
+
+repositories {
+    jcenter();
+    mavenCentral()
+}
+
+dependencies {
+
+    // TODO Replace this with artifact dependencies
+    compile fileTree("${projectDir}/lib/core/openremote/or-commons.jar")
+
+    compile "net.sf.flexjson:flexjson:$flexjsonVersion"
+		
+    compile "org.hibernate:hibernate-core:$hibernateVersion"
+    compile "org.hibernate:hibernate-entitymanager:$hibernateVersion"
+		
+		compile "org.restlet.jee:org.restlet:$restletVersion"
+    compile "org.restlet.jee:org.restlet.ext.json:$restletVersion"
+    compile "org.restlet.jee:org.restlet.ext.servlet:$restletVersion"
+    compile "org.restlet.jee:org.restlet.lib.org.json:$restletJsonVersion"
+
+		compile "log4j:log4j:$log4jVersion"
+		compile "commons-lang:commons-lang:$commonsLangVersion"
+		compile "commons-codec:commons-codec:$commonsCodecVersion"
+    compile "org.springframework:spring-orm:$springVersion"
+    compile "org.springframework:spring-tx:$springVersion"
+    compile "org.springframework:spring-context:$springVersion"
+    compile "org.springframework:spring-core:$springVersion"
+		
+    compile "org.springframework.security:spring-security-core:$springVersion"
+		
+    providedCompile "javax.servlet:javax.servlet-api:$servletVersion"
+
+    testCompile "junit:junit:$junitVersion"
+}
