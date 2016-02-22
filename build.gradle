@@ -24,14 +24,17 @@ dependencies {
     compile "org.restlet.jee:org.restlet.ext.json:$restletVersion"
     compile "org.restlet.jee:org.restlet.ext.servlet:$restletVersion"
     compile "org.restlet.jee:org.restlet.lib.org.json:$restletJsonVersion"
+    compile "org.restlet.jee:org.restlet.ext.spring:$restletVersion"
 
 		compile "log4j:log4j:$log4jVersion"
 		compile "commons-lang:commons-lang:$commonsLangVersion"
 		compile "commons-codec:commons-codec:$commonsCodecVersion"
+    compile "commons-dbcp:commons-dbcp:$commonsDbcpVersion"
     compile "org.springframework:spring-orm:$springVersion"
     compile "org.springframework:spring-tx:$springVersion"
     compile "org.springframework:spring-context:$springVersion"
     compile "org.springframework:spring-core:$springVersion"
+    compile "org.springframework:spring-web:$springVersion"
 		
     compile "org.springframework.security:spring-security-core:$springVersion"
 		
