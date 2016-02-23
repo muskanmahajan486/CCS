@@ -20,6 +20,8 @@ dependencies {
     compile "org.hibernate:hibernate-core:$hibernateVersion"
     compile "org.hibernate:hibernate-entitymanager:$hibernateVersion"
 		
+		compile "mysql:mysql-connector-java:$mysqlConnectorVersion"
+		
 		compile "org.restlet.jee:org.restlet:$restletVersion"
     compile "org.restlet.jee:org.restlet.ext.json:$restletVersion"
     compile "org.restlet.jee:org.restlet.ext.servlet:$restletVersion"
