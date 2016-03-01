@@ -8,12 +8,13 @@ version = projectVersion
 repositories {
     jcenter();
     mavenCentral()
+    maven {
+        url "http://m2repo.openremote.com/content/groups/public/"
+    }
 }
 
 dependencies {
-
-    // TODO Replace this with artifact dependencies
-    compile fileTree("${projectDir}/lib/core/openremote/or-commons.jar")
+    compile "org.openremote:or-commons:0.1.0"
 
     compile "net.sf.flexjson:flexjson:$flexjsonVersion"
 		
