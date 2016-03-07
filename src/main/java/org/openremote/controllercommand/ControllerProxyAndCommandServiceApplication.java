@@ -1,7 +1,6 @@
 package org.openremote.controllercommand;
 
 import org.glassfish.jersey.server.ResourceConfig;
-import org.glassfish.jersey.server.ServerConfig;
 import org.openremote.beehive.EntityTransactionFilter;
 import org.openremote.controllercommand.proxy.ProxyServer;
 import org.openremote.controllercommand.resources.ControllerCommandResource;
@@ -11,20 +10,15 @@ import org.openremote.controllercommand.service.impl.ControllerCommandServiceImp
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Resource;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.EntityTransaction;
 import javax.persistence.Persistence;
-import javax.servlet.ServletConfig;
-import javax.servlet.ServletContext;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerRequestFilter;
 import javax.ws.rs.container.ContainerResponseContext;
 import javax.ws.rs.container.ContainerResponseFilter;
-import javax.ws.rs.core.Context;
 import java.io.IOException;
-import java.util.Collection;
 import java.util.Properties;
 
 public class ControllerProxyAndCommandServiceApplication extends ResourceConfig
