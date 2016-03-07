@@ -19,12 +19,13 @@
 */
 package org.openremote.controllercommand.service;
 
-import java.util.List;
-
 import org.openremote.controllercommand.domain.ControllerCommand;
 import org.openremote.controllercommand.domain.ControllerCommandDTO;
 import org.openremote.controllercommand.domain.InitiateProxyControllerCommand;
 import org.openremote.controllercommand.domain.User;
+
+import javax.persistence.EntityManager;
+import java.util.List;
 
 /**
  * Account service.
@@ -35,16 +36,16 @@ import org.openremote.controllercommand.domain.User;
  */
 public interface ControllerCommandService {
    
-   void save(ControllerCommand controllerCommand);
+   void save(EntityManager entityManager, ControllerCommand controllerCommand);
 
-   void update(ControllerCommand controllerCommand);
+   void update(EntityManager entityManager, ControllerCommand controllerCommand);
 
    void closeControllerCommand(ControllerCommand controllerCommand);
 
-   ControllerCommand findControllerCommandById(Long id);
+   ControllerCommand findControllerCommandById(EntityManager entityManager, Long id);
 
-   InitiateProxyControllerCommand saveProxyControllerCommand(User user, String url);
+   InitiateProxyControllerCommand saveProxyControllerCommand(EntityManager entityManager, User user, String url);
 
-  List<ControllerCommandDTO> queryByControllerOidForUser(Long oid, String username);
+  List<ControllerCommandDTO> queryByControllerOidForUser(EntityManager entityManager, Long oid, String username);
 
 }

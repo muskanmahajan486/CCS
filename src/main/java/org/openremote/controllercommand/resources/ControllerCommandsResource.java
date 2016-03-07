@@ -1,28 +1,32 @@
 package org.openremote.controllercommand.resources;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import javax.servlet.http.HttpServletRequest;
-
+import flexjson.JSONSerializer;
+import org.openremote.beehive.EntityTransactionFilter;
 import org.openremote.controllercommand.domain.ControllerCommandDTO;
 import org.openremote.controllercommand.service.ControllerCommandService;
 import org.openremote.rest.GenericResourceResultWithErrorMessage;
-import org.restlet.Request;
-import org.restlet.ext.json.JsonRepresentation;
-import org.restlet.ext.servlet.ServletUtils;
-import org.restlet.representation.Representation;
-import org.restlet.resource.Get;
-import org.restlet.resource.ServerResource;
 
-import flexjson.JSONSerializer;
+import javax.inject.Inject;
+import javax.persistence.EntityManager;
+import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author <a href="mailto:eric@openremote.org">Eric Bariaux</a>
  */
-public class ControllerCommandsResource extends ServerResource
+@Path("/")
+public class ControllerCommandsResource
 {
 
+  @Inject
   private ControllerCommandService controllerCommandService;
 
   /**
@@ -31,22 +35,22 @@ public class ControllerCommandsResource extends ServerResource
    * 
    * @return a List of ControllerCommand
    */
-  @Get("json")
-  public Representation loadControllerCommands()
+
+  @GET
+  @Path("commands/{controllerOid}")
+  @Produces(MediaType.APPLICATION_JSON)
+  public Response loadControllerCommands(@Context HttpServletRequest request, @PathParam("controllerOid") String controllerOid)
   {
     GenericResourceResultWithErrorMessage result = null;
     try
     {
-      String oid = (String) getRequest().getAttributes().get("controllerOid");
-      if (oid != null)
+      if (controllerOid != null)
       {
-        Long id = Long.valueOf(oid);
+        Long id = Long.valueOf(controllerOid);
         
-        Request restletRequest = getRequest();
-        HttpServletRequest servletRequest = ServletUtils.getRequest(restletRequest);
-        String username = servletRequest.getUserPrincipal().getName();
+        String username = request.getUserPrincipal().getName();
 
-        List<ControllerCommandDTO> commands = controllerCommandService.queryByControllerOidForUser(id, username);
+        List<ControllerCommandDTO> commands = controllerCommandService.queryByControllerOidForUser(getEntityManager(request), id, username);
         result = new GenericResourceResultWithErrorMessage(null, commands);
       } else {
         result = new GenericResourceResultWithErrorMessage(null, new ArrayList<ControllerCommandDTO>());
@@ -55,15 +59,12 @@ public class ControllerCommandsResource extends ServerResource
     {
       result = new GenericResourceResultWithErrorMessage(e.getMessage(), null);
     }
-    Representation rep = new JsonRepresentation(new JSONSerializer().exclude("*.class").deepSerialize(result));
-    return rep;
+    return Response.ok(new JSONSerializer().exclude("*.class").deepSerialize(result)).build();
   }
-  
-  
 
-  public void setControllerCommandService(ControllerCommandService controllerCommandService)
+  private EntityManager getEntityManager(HttpServletRequest request)
   {
-    this.controllerCommandService = controllerCommandService;
+    return (EntityManager)request.getAttribute(EntityTransactionFilter.PERSISTENCE_ENTITY_MANAGER_LOOKUP);
   }
 
 }

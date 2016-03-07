@@ -21,6 +21,8 @@ package org.openremote.controllercommand.service;
 
 import org.openremote.controllercommand.domain.User;
 
+import javax.persistence.EntityManager;
+
 /**
  * Account service.
  * 
@@ -29,8 +31,8 @@ import org.openremote.controllercommand.domain.User;
  */
 public interface AccountService {
 
-  User loadByUsername(String username);
+  User loadByUsername(EntityManager entityManager, String username);
 
-  User loadByHTTPBasicCredentials(String credentials);
+  User loadByHTTPBasicCredentials(EntityManager entityManager, String credentials);
 
 }

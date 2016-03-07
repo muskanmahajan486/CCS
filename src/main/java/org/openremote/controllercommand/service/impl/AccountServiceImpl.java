@@ -25,6 +25,11 @@ import org.openremote.controllercommand.domain.User;
 import org.openremote.controllercommand.service.AccountService;
 import org.springframework.security.authentication.encoding.Md5PasswordEncoder;
 
+import javax.persistence.EntityManager;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Root;
+
 
 /**
  * Account service implementation.
@@ -43,12 +48,12 @@ public class AccountServiceImpl implements AccountService {
   }
 
   @Override
-   public User loadByUsername(String username) {
-      return genericDAO.getByNonIdField(User.class, "username", username);
+   public User loadByUsername(EntityManager entityManager, String username) {
+    return genericDAO.getByNonIdField(entityManager, User.class, "username", username);
    }
 
    @Override
-   public User loadByHTTPBasicCredentials(String credentials) {
+   public User loadByHTTPBasicCredentials(EntityManager entityManager, String credentials) {
       if (credentials.startsWith(HTTP_BASIC_AUTH_HEADER_VALUE_PREFIX)) {
          credentials = credentials.replaceAll(HTTP_BASIC_AUTH_HEADER_VALUE_PREFIX, "");
          credentials = new String(Base64.decodeBase64(credentials.getBytes()));
@@ -56,7 +61,7 @@ public class AccountServiceImpl implements AccountService {
          if (arr.length == 2) {
             String username = arr[0];
             String password = arr[1];
-            User user = loadByUsername(username);
+            User user = loadByUsername(entityManager, username);
             String encodedPassword = new Md5PasswordEncoder().encodePassword(password, username);
             if (user != null && user.getPassword().equals(encodedPassword)) {
                return user;

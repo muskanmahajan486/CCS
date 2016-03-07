@@ -16,6 +16,7 @@ import javax.net.ssl.TrustManagerFactory;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
+import org.openremote.controllercommand.ControllerProxyAndCommandServiceApplication;
 import org.openremote.controllercommand.service.AccountService;
 import org.openremote.controllercommand.service.ControllerCommandService;
 
@@ -36,12 +37,14 @@ public class ProxyServer extends Thread
   private AccountService accountService;
   private ControllerCommandService controllerCommandService;
   private SSLServerSocketFactory sslServerSocketfactory = null;
+  private ControllerProxyAndCommandServiceApplication application;
 
   public ProxyServer(String proxyHostname, Integer proxyTimeout, Integer proxyPort, String proxyClientPortRange, Boolean useSSL, String keystore,
-          String keystorePassword, ControllerCommandService controllerCommandService, AccountService accountService)
+          String keystorePassword, ControllerCommandService controllerCommandService, AccountService accountService, ControllerProxyAndCommandServiceApplication application)
   {
     this.accountService = accountService;
     this.controllerCommandService = controllerCommandService;
+    this.application = application;
 
     if (StringUtils.isEmpty(proxyHostname))
     {
@@ -182,7 +185,7 @@ public class ProxyServer extends Thread
     {
       logger.info("Got a client socket");
       ProxyClient client = new ProxyClient(this, clientSocket, timeout, hostName, minClientPort, maxClientPort, controllerCommandService,
-              accountService, sslServerSocketfactory);
+              accountService, sslServerSocketfactory, application);
       clients.add(client);
       logger.info("Starting client");
       client.start();

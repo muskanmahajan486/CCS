@@ -4,32 +4,189 @@
             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"  
             xsi:schemaLocation="http://java.sun.com/xml/ns/j2ee  
                  http://java.sun.com/xml/ns/j2ee/web-app_2_4.xsd">  
-   <display-name>DeviceDiscovery Service</display-name>  
-  
-  <listener>
-    <listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
-  </listener>
-  
-  <context-param>
-    <param-name>org.restlet.component</param-name>
-    <param-value>component</param-value>
-  </context-param>
-  <context-param>
-    <param-name>contextConfigLocation</param-name>
-    <param-value>
-    	WEB-INF/classes/applicationContext.xml,
-    </param-value>
-  </context-param>
-  
+   <display-name>DeviceDiscovery Service</display-name>
+
+
+  <!--
+  =================================================================================================
+
+    Servlet filters for request pre-processing and response post-processing
+
+  =================================================================================================
+  -->
+
+  <filter>
+    <description>
+      An automated JPA per-request transaction management
+    </description>
+
+    <filter-name>Transaction Management</filter-name>
+    <filter-class>org.openremote.beehive.EntityTransactionFilter</filter-class>
+
+    <!--
+     | Name of the persistence context used in the transaction management filter.
+     | This must be defined in the persistence.xml file.
+     +-->
+    <init-param>
+      <param-name>PersistenceContext</param-name>
+      <param-value>CCS-MySQL</param-value>
+    </init-param>
+
+    <!--
+     | OPTIONAL:  JPA JDBC driver standard persistence context property. This will override
+     |            the property defined in the persistence.xml for the persistence context,
+     |            if any is defined.
+     +-->
+    <init-param>
+      <param-name>javax.persistence.jdbc.driver</param-name>
+      <param-value>com.mysql.jdbc.Driver</param-value>
+    </init-param>
+
+    <!--
+     | OPTIONAL:  JPA JDBC URL standard persistence context property. This will override
+     |            the property defined in the persistence.xml for the persistence context,
+     |            if any is defined.
+     +-->
+    <init-param>
+      <param-name>javax.persistence.jdbc.url</param-name>
+      <param-value>jdbc:mysql://localhost:3306/beehive?autoReconnect=true&amp;useUnicode=true&amp;characterEncoding=UTF-8</param-value>
+    </init-param>
+
+    <!--
+     | OPTIONAL:  JPA JDBC user standard persistence context property. This will override
+     |            the property defined in the persistence.xml for persistence context,
+     |            if any is defined.
+     +-->
+    <init-param>
+      <param-name>javax.persistence.jdbc.user</param-name>
+      <param-value>beehive</param-value>
+    </init-param>
+    <init-param>
+      <param-name>javax.persistence.jdbc.password</param-name>
+      <param-value>beehive</param-value>
+    </init-param>
+
+
+    <!--
+     | Other properties: add other properties for persistence context here, if you want to
+     |                   override the properties defined in the persistence.xml (and do not
+     |                   wish to modify the persistence.xml directly). E.g. hibernate specific
+     |                   properties:
+     |
+     |                     - hibernate.connection.pool_size
+     |                     - hibernate.cache.provider_class
+     |                     - hibernate.hbm2ddl.auto
+     |
+     |                   For each property, add a corresponding entry:
+     |
+     |                       <init-param>
+     |                         <param-name>name</param-name>
+     |                         <param-value>value</param-value>
+     |                       </init-param>
+     |
+     |                   Note that only properties starting with prefix 'javax.persistence.' or
+     |                   'hibernate.' are accepted.
+     +-->
+
+    <init-param>
+      <param-name>hibernate.dialect</param-name>
+      <param-value>org.hibernate.dialect.MySQLDialect</param-value>
+    </init-param>
+
+  </filter>
+
+  <!--
+   | Apply transaction management to application servlet.
+   +-->
+  <filter-mapping>
+    <filter-name>Transaction Management</filter-name>
+    <servlet-name>Jersey Servlet Container for CCS</servlet-name>
+
+    <!-- Apply filter for requests originating from the client only -->
+    <dispatcher>REQUEST</dispatcher>
+
+  </filter-mapping>
+
+
+
+  <!--
+  =================================================================================================
+
+    Map servlet Java class implementations to URLs.
+
+    This mapping links the JAX-RS 2.0 implementation to Glassfish Jersey based implementation
+    of the API.
+
+  =================================================================================================
+  -->
+
+
   <servlet>
-    <servlet-name>deviceDiscoveryService</servlet-name>
-    <servlet-class>org.restlet.ext.spring.SpringServerServlet</servlet-class>
+    <servlet-name>Jersey Servlet Container for CCS</servlet-name>
+
+    <!-- Jersey implementation -->
+
+    <servlet-class>
+      org.glassfish.jersey.servlet.ServletContainer
+    </servlet-class>
+
+    <!-- JAX-RS 2.0 configuration to link JAX-RS application -->
+
+    <init-param>
+      <param-name>javax.ws.rs.Application</param-name>
+      <param-value>org.openremote.controllercommand.ControllerProxyAndCommandServiceApplication</param-value>
+    </init-param>
+
+    <init-param>
+      <param-name>proxy.hostname</param-name>
+      <param-value>localhost</param-value>
+    </init-param>
+
+    <init-param>
+      <param-name>proxy.timeout</param-name>
+      <param-value>10000</param-value>
+    </init-param>
+
+    <init-param>
+      <param-name>proxy.port</param-name>
+      <param-value>10000</param-value>
+    </init-param>
+
+    <init-param>
+      <param-name>proxy.clientPortRange</param-name>
+      <param-value>30000-30010</param-value>
+    </init-param>
+
+    <init-param>
+      <param-name>proxy.useSSL</param-name>
+      <param-value>true</param-value>
+    </init-param>
+
+    <init-param>
+      <param-name>proxy.keystore</param-name>
+      <param-value>/keystore.ks</param-value>
+    </init-param>
+
+    <init-param>
+      <param-name>proxy.keystorePassword</param-name>
+      <param-value>storepass</param-value>
+    </init-param>
+
     <load-on-startup>1</load-on-startup>
   </servlet>
 
+
+  <!--
+
+       URL Mapping:
+
+       As per the Beehive REST API design convention, all REST API calls start with '/rest' path.
+
+  -->
+
   <servlet-mapping>
-    <servlet-name>deviceDiscoveryService</servlet-name>
-    <url-pattern>/*</url-pattern>
+    <servlet-name>Jersey Servlet Container for CCS</servlet-name>
+    <url-pattern>/rest/*</url-pattern>
   </servlet-mapping>
 
     <!--

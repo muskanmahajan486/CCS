@@ -15,8 +15,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.net.ssl.SSLServerSocketFactory;
+import javax.persistence.EntityManager;
 
 import org.apache.log4j.Logger;
+import org.openremote.controllercommand.ControllerProxyAndCommandServiceApplication;
 import org.openremote.controllercommand.domain.InitiateProxyControllerCommand;
 import org.openremote.controllercommand.domain.User;
 import org.openremote.controllercommand.service.AccountService;
@@ -32,9 +34,10 @@ public class ProxyClient extends Proxy {
    private AccountService accountService;
    private ControllerCommandService controllerCommandService;
    private SSLServerSocketFactory sslServerSocketFactory;
+  private ControllerProxyAndCommandServiceApplication application;
 
    public ProxyClient(ProxyServer server, Socket clientSocket, int timeout, String hostName, int minClientPort, int maxClientPort,
-           ControllerCommandService controllerCommandService, AccountService accountService, SSLServerSocketFactory sslServerSocketFactory)  throws IOException {
+                      ControllerCommandService controllerCommandService, AccountService accountService, SSLServerSocketFactory sslServerSocketFactory, ControllerProxyAndCommandServiceApplication application)  throws IOException {
       super(clientSocket, timeout);
       this.server = server;
       this.hostName = hostName;
@@ -43,6 +46,7 @@ public class ProxyClient extends Proxy {
       this.accountService = accountService;
       this.controllerCommandService = controllerCommandService;
       this.sslServerSocketFactory = sslServerSocketFactory;
+     this.application = application;
    }
 
    protected void onProxyExit() {
@@ -96,11 +100,23 @@ public class ProxyClient extends Proxy {
                 return clientSocket;
             }
             // we timed out
-         }finally{
+         } finally {
             // we got contacted, or not but let's drop this command since we're not listening anymore
-            ControllerCommandService controllerCommandService = getControllerCommandService();
-            controllerCommandService.closeControllerCommand(controllerCommand);
-            controllerCommandService.update(controllerCommand);
+           EntityManager entityManager = application.createEntityManager();
+           try
+           {
+             ControllerCommandService controllerCommandService = getControllerCommandService();
+             controllerCommandService.closeControllerCommand(controllerCommand);
+             controllerCommandService.update(entityManager, controllerCommand);
+             application.commitEntityManager(entityManager);
+             entityManager = null;
+           } finally
+           {
+             if (entityManager != null)
+             {
+               application.rollbackEntityManager(entityManager);
+             }
+           }
          }
       }finally{
          try{
@@ -270,7 +286,14 @@ public class ProxyClient extends Proxy {
       // now fold it
       value = value.replaceAll("\r\n[ \t]+", " ").trim();
       // and attempt to validate it
-      User user = getAccountService().loadByHTTPBasicCredentials(value);
+      User user = null;
+     EntityManager entityManager = application.createEntityManager();
+     try
+     {
+       user = getAccountService().loadByHTTPBasicCredentials(entityManager, value);
+     } finally {
+       application.rollbackEntityManager(entityManager);
+     }
       if(user == null){
          // authentication failed
          throw new HTTPException(HttpURLConnection.HTTP_UNAUTHORIZED, json, optionsRequest);
@@ -287,8 +310,21 @@ public class ProxyClient extends Proxy {
    }
 
    private InitiateProxyControllerCommand contactController(User user, int port) {
-      ControllerCommandService controllerCommandService = getControllerCommandService();
-      return controllerCommandService.saveProxyControllerCommand(user, ((sslServerSocketFactory!=null)?"https://":"http://")+hostName+":"+port);
+     InitiateProxyControllerCommand command = null;
+     EntityManager entityManager = application.createEntityManager();
+     try
+     {
+       ControllerCommandService controllerCommandService = getControllerCommandService();
+       command = controllerCommandService.saveProxyControllerCommand(entityManager, user, ((sslServerSocketFactory != null) ? "https://" : "http://") + hostName + ":" + port);
+       application.commitEntityManager(entityManager);
+       entityManager = null;
+     } finally
+     {
+       if (entityManager != null) {
+         application.rollbackEntityManager(entityManager);
+       }
+     }
+     return command;
    }
 
 }

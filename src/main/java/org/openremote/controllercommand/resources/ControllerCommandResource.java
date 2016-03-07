@@ -1,11 +1,9 @@
 package org.openremote.controllercommand.resources;
 
-import java.io.IOException;
-
-import javax.servlet.http.HttpServletRequest;
-
+import flexjson.JSONSerializer;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.openremote.beehive.EntityTransactionFilter;
 import org.openremote.controllercommand.domain.Account;
 import org.openremote.controllercommand.domain.ControllerCommand;
 import org.openremote.controllercommand.domain.ControllerCommandDTO;
@@ -14,23 +12,28 @@ import org.openremote.controllercommand.domain.User;
 import org.openremote.controllercommand.service.AccountService;
 import org.openremote.controllercommand.service.ControllerCommandService;
 import org.openremote.rest.GenericResourceResultWithErrorMessage;
-import org.restlet.Request;
-import org.restlet.data.MediaType;
-import org.restlet.data.Status;
-import org.restlet.ext.json.JsonRepresentation;
-import org.restlet.ext.servlet.ServletUtils;
-import org.restlet.representation.Representation;
-import org.restlet.resource.Delete;
-import org.restlet.resource.Post;
-import org.restlet.resource.ServerResource;
 
-import flexjson.JSONSerializer;
+import javax.inject.Inject;
+import javax.persistence.EntityManager;
+import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.BadRequestException;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 
-public class ControllerCommandResource extends ServerResource
+@Path("/")
+public class ControllerCommandResource
 {
-
+  @Inject
   private ControllerCommandService controllerCommandService;
-  
+
+  @Inject
   private AccountService accountService;
 
   /**
@@ -39,19 +42,20 @@ public class ControllerCommandResource extends ServerResource
    * 
    * @return ResultObject with String "ok"
    */
-  @Delete("json")
-  public Representation ackControllerCommands()
+  @DELETE
+  @Path("command/{commandId}")
+  @Produces(MediaType.APPLICATION_JSON)
+  public Response ackControllerCommands(@Context HttpServletRequest request, @PathParam("commandId") String commandId)
   {
     GenericResourceResultWithErrorMessage result = null;
     try
     {
-      String oid = (String) getRequest().getAttributes().get("commandId");
-      if (oid != null)
+      if (commandId != null)
       {
-        Long id = Long.valueOf(oid);
-        ControllerCommand controllerCommand = controllerCommandService.findControllerCommandById(id);
+        Long id = Long.valueOf(commandId);
+        ControllerCommand controllerCommand = controllerCommandService.findControllerCommandById(getEntityManager(request), id);
         controllerCommandService.closeControllerCommand(controllerCommand);
-        controllerCommandService.update(controllerCommand);
+        controllerCommandService.update(getEntityManager(request), controllerCommand);
         result = new GenericResourceResultWithErrorMessage(null, "ok");
       } else {
         result = new GenericResourceResultWithErrorMessage("command not found", null);
@@ -60,71 +64,50 @@ public class ControllerCommandResource extends ServerResource
     {
       result = new GenericResourceResultWithErrorMessage(e.getMessage(), null);
     }
-    Representation rep = new JsonRepresentation(new JSONSerializer().exclude("*.class").deepSerialize(result));
-    return rep;
+    return Response.ok(new JSONSerializer().exclude("*.class").deepSerialize(result)).build();
   }
-  
-  @Post("json:json")
-  public Representation saveCommand(Representation data)
+
+  @POST
+  @Path("command")
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Produces(MediaType.APPLICATION_JSON)
+  public Response saveCommand(@Context HttpServletRequest request, String jsonString)
   {
-    if (data == null) {
-      return generateErrorResponse(Status.CLIENT_ERROR_BAD_REQUEST, "No data received");
+    if (jsonString == null) {
+      throw new BadRequestException("No data received");
     }
-    if (!MediaType.APPLICATION_JSON.equals(data.getMediaType(), true)) {
-      return generateErrorResponse(Status.CLIENT_ERROR_UNSUPPORTED_MEDIA_TYPE, "Only JSON payload are supported");
-    }
+
+    String username = request.getUserPrincipal().getName();
     
-    Request restletRequest = getRequest();
-    HttpServletRequest servletRequest = ServletUtils.getRequest(restletRequest);
-    String username = servletRequest.getUserPrincipal().getName();
-    
-    User user = accountService.loadByUsername(username);
+    User user = accountService.loadByUsername(getEntityManager(request), username);
     Account account = user.getAccount();
     
-    Representation rep = null;
     try {
-      JSONObject jsonData = new JSONObject(data.getText());
+      JSONObject jsonData = new JSONObject(jsonString);
       String typeAsString = jsonData.getString("type");
       if (typeAsString == null) {
-        return generateErrorResponse(Status.CLIENT_ERROR_BAD_REQUEST, "Type must be provided");
+        throw new BadRequestException("Type must be provided");
       }
       try {
         ControllerCommandDTO.Type type = Type.valueOf(typeAsString.trim().toUpperCase());
         if (Type.DOWNLOAD_DESIGN != type) {
-          return generateErrorResponse(Status.CLIENT_ERROR_BAD_REQUEST, "Unsupported command type");
+          throw new BadRequestException("Unsupported command type");
         }
         ControllerCommand command = new ControllerCommand(account, Type.DOWNLOAD_DESIGN);
-        controllerCommandService.save(command);
+        controllerCommandService.save(getEntityManager(request), command);
         GenericResourceResultWithErrorMessage result = new GenericResourceResultWithErrorMessage(null, command);
-        rep = new JsonRepresentation(new JSONSerializer().exclude("*.class").exclude("result.account").deepSerialize(result));
+        return Response.ok(new JSONSerializer().exclude("*.class").exclude("result.account").deepSerialize(result)).build();
       } catch (IllegalArgumentException e) {
-        return generateErrorResponse(Status.CLIENT_ERROR_BAD_REQUEST, "Unknown command type");            
+        throw new BadRequestException("Unknown command type");
       }
     } catch (JSONException e) {
-      return generateErrorResponse(Status.CLIENT_ERROR_BAD_REQUEST, "Invalid JSON payload");
-    } catch (IOException e1) {
-      return generateErrorResponse(Status.SERVER_ERROR_INTERNAL, "Can't read payload");
+      throw new BadRequestException("Invalid JSON payload");
     }
-    
-    return rep;
-  }
-  
-  private Representation generateErrorResponse(Status status, String errorMessage)
-  {
-    GenericResourceResultWithErrorMessage result = new GenericResourceResultWithErrorMessage(errorMessage, null);
-    getResponse().setStatus(status);
-    return new JsonRepresentation(new JSONSerializer().exclude("*.class").deepSerialize(result));
-  }
-  
-
-  public void setControllerCommandService(ControllerCommandService controllerCommandService)
-  {
-    this.controllerCommandService = controllerCommandService;
   }
 
-  public void setAccountService(AccountService accountService)
+  private EntityManager getEntityManager(HttpServletRequest request)
   {
-    this.accountService = accountService;
+    return (EntityManager)request.getAttribute(EntityTransactionFilter.PERSISTENCE_ENTITY_MANAGER_LOOKUP);
   }
-  
+
 }

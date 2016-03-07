@@ -19,23 +19,23 @@
  */
 package org.openremote.controllercommand.service.impl;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-
-import org.hibernate.FetchMode;
-import org.hibernate.criterion.DetachedCriteria;
-import org.hibernate.criterion.Order;
-import org.hibernate.criterion.Restrictions;
 import org.openremote.controllercommand.GenericDAO;
 import org.openremote.controllercommand.domain.Controller;
 import org.openremote.controllercommand.domain.ControllerCommand;
+import org.openremote.controllercommand.domain.ControllerCommand.State;
 import org.openremote.controllercommand.domain.ControllerCommandDTO;
 import org.openremote.controllercommand.domain.InitiateProxyControllerCommand;
 import org.openremote.controllercommand.domain.User;
-import org.openremote.controllercommand.domain.ControllerCommand.State;
 import org.openremote.controllercommand.service.ControllerCommandService;
-import org.springframework.transaction.annotation.Transactional;
+
+import javax.persistence.EntityManager;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Predicate;
+import javax.persistence.criteria.Root;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * ControllerCommand service implementation.
@@ -47,20 +47,30 @@ public class ControllerCommandServiceImpl implements ControllerCommandService
 
   protected GenericDAO genericDAO;
 
-  @Override
-  @Transactional
-  public void save(ControllerCommand c)
-  {
-    genericDAO.save(c);
+  public void setGenericDAO(GenericDAO genericDAO) {
+    this.genericDAO = genericDAO;
   }
 
   @Override
-  public List<ControllerCommandDTO> queryByControllerOidForUser(Long oid, String username)
+  public void save(EntityManager entityManager, ControllerCommand c)
   {
-    User u = genericDAO.getByNonIdField(User.class, "username", username);
+    entityManager.persist(c);
+  }
 
-    DetachedCriteria c = DetachedCriteria.forClass(Controller.class).add(Restrictions.eq("oid", oid)).setFetchMode("account.users", FetchMode.JOIN);
-    Controller controller = genericDAO.findOneByDetachedCriteria(c);
+  @Override
+  public List<ControllerCommandDTO> queryByControllerOidForUser(EntityManager entityManager, Long oid, String username)
+  {
+    User u = genericDAO.getByNonIdField(entityManager, User.class, "username", username);
+
+
+
+    CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
+    CriteriaQuery<Controller> controllerQuery = criteriaBuilder.createQuery(Controller.class);
+    Root<Controller> controllerRoot = controllerQuery.from(Controller.class);
+    controllerRoot.fetch("account.users");
+    controllerQuery.select(controllerRoot);
+    controllerQuery.where(criteriaBuilder.equal(controllerRoot.get("oid"), oid));
+    Controller controller = entityManager.createQuery(controllerQuery).getSingleResult();
 
     if (controller == null)
     {
@@ -71,12 +81,16 @@ public class ControllerCommandServiceImpl implements ControllerCommandService
     if (!controller.getAccount().getUsers().contains(u)) {
     	return Collections.emptyList();
     }
-    
-    // we want all open controller commands for this account by creation date
-    DetachedCriteria criteria = DetachedCriteria.forClass(ControllerCommand.class).add(Restrictions.eq("account", controller.getAccount())).add(
-            Restrictions.eq("state", State.OPEN)).addOrder(Order.asc("creationDate"));
 
-    List<ControllerCommand> list = genericDAO.findByDetachedCriteria(criteria);
+    CriteriaQuery<ControllerCommand> controllerCommandQuery = criteriaBuilder.createQuery(ControllerCommand.class);
+    Root<ControllerCommand> controllerCommandRoot = controllerCommandQuery.from(ControllerCommand.class);
+    controllerCommandQuery.select(controllerCommandRoot);
+    Predicate criteria = criteriaBuilder.equal(controllerCommandRoot.get("account"), controller.getAccount());
+    criteria = criteriaBuilder.and(criteria, criteriaBuilder.equal(controllerCommandRoot.get("state"), State.OPEN));
+    controllerCommandQuery.where(criteria);
+    controllerCommandQuery.orderBy(criteriaBuilder.asc(controllerCommandRoot.get("creationDate")));
+
+    List<ControllerCommand> list = entityManager.createQuery(controllerCommandQuery).getResultList();
     List<ControllerCommandDTO> result = new ArrayList<ControllerCommandDTO>(list.size());
     for (ControllerCommand cmd : list)
     {
@@ -93,11 +107,10 @@ public class ControllerCommandServiceImpl implements ControllerCommandService
   }
 
   @Override
-  @Transactional
-  public InitiateProxyControllerCommand saveProxyControllerCommand(User user, String url)
+  public InitiateProxyControllerCommand saveProxyControllerCommand(EntityManager entityManager, User user, String url)
   {
     InitiateProxyControllerCommand command = new InitiateProxyControllerCommand(user.getAccount(), ControllerCommandDTO.Type.INITIATE_PROXY, url);
-    save(command);
+    save(entityManager, command);
     return command;
   }
 
@@ -108,24 +121,15 @@ public class ControllerCommandServiceImpl implements ControllerCommandService
   }
 
   @Override
-  @Transactional
-  public ControllerCommand findControllerCommandById(Long id)
+  public ControllerCommand findControllerCommandById(EntityManager entityManager, Long id)
   {
-    return genericDAO.getById(ControllerCommand.class, id);
+    return entityManager.find(ControllerCommand.class, id);
   }
 
   @Override
-  @Transactional
-  public void update(ControllerCommand controllerCommand)
+  public void update(EntityManager entityManager, ControllerCommand controllerCommand)
   {
-    genericDAO.saveOrUpdate(controllerCommand);
-  }
-
-  //
-  // Internal plumbing
-  public void setGenericDAO(GenericDAO genericDAO)
-  {
-    this.genericDAO = genericDAO;
+    entityManager.merge(controllerCommand);
   }
 
 }
