@@ -2,6 +2,7 @@ package org.openremote.controllercommand;
 
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.server.ServerConfig;
+import org.openremote.beehive.EntityTransactionFilter;
 import org.openremote.controllercommand.proxy.ProxyServer;
 import org.openremote.controllercommand.resources.ControllerCommandResource;
 import org.openremote.controllercommand.resources.ControllerCommandsResource;
@@ -17,6 +18,10 @@ import javax.persistence.EntityTransaction;
 import javax.persistence.Persistence;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
+import javax.ws.rs.container.ContainerRequestContext;
+import javax.ws.rs.container.ContainerRequestFilter;
+import javax.ws.rs.container.ContainerResponseContext;
+import javax.ws.rs.container.ContainerResponseFilter;
 import javax.ws.rs.core.Context;
 import java.io.IOException;
 import java.util.Collection;
@@ -25,12 +30,15 @@ import java.util.Properties;
 public class ControllerProxyAndCommandServiceApplication extends ResourceConfig
 {
   // TODO: get context name from init param
-  static private EntityManagerFactory entityManagerFactory = Persistence.createEntityManagerFactory("CCS-MySQL");
+  static private EntityManagerFactory entityManagerFactory;
 
   protected final static Logger persistenceLog = LoggerFactory.getLogger(ControllerProxyAndCommandServiceApplication.class);
 
   public ControllerProxyAndCommandServiceApplication()
   {
+    entityManagerFactory = Persistence.createEntityManagerFactory("CCS-MySQL");
+    register(EntityPersistence.class);
+
     GenericDAO genericDAO = new GenericDAO();
     final AccountServiceImpl accountService = new AccountServiceImpl();
     accountService.setGenericDAO(genericDAO);
@@ -144,6 +152,103 @@ public class ControllerProxyAndCommandServiceApplication extends ResourceConfig
       entityManager.close();
     }
     persistenceLog.trace("<<rollbackEntityManager");
+  }
+
+  /**
+   * This container filter implements a managed persistence context for JPA entities used
+   * in JAX-RS resources.
+   */
+  private static class EntityPersistence implements ContainerRequestFilter, ContainerResponseFilter
+  {
+    // Class Members ------------------------------------------------------------------------------
+
+    // ContainerRequestFilter Implementation ------------------------------------------------------
+
+    /**
+     * Passes the entity manager reference as a request property to the resource classes to use.
+     * Also begins the transaction boundary for JPA entities here.
+     */
+    @Override public void filter(ContainerRequestContext request)
+    {
+      EntityManager entityManager = null;
+      try
+      {
+        entityManager = entityManagerFactory.createEntityManager();
+        request.setProperty(EntityTransactionFilter.PERSISTENCE_ENTITY_MANAGER_LOOKUP, entityManager);
+        entityManager.getTransaction().begin();
+      }
+
+      catch (Throwable throwable)
+      {
+
+        persistenceLog.error("Failed to create EntityManager", throwable);
+
+        if (entityManager != null)
+        {
+          EntityTransaction tx = entityManager.getTransaction();
+          if (tx != null && tx.isActive())
+          {
+            try
+            {
+              tx.rollback();
+            } catch (Exception e) {
+              persistenceLog.warn("Failed to rollback transaction ", e);
+            }
+          }
+        }
+      }
+    }
+
+    /**
+     * Manages the entity transaction boundary on return request. If entity transaction has
+     * been marked for rollback, or we are returning an HTTP error code 400 or above, roll back
+     * the entity transaction.
+     */
+    @Override public void filter(ContainerRequestContext request, ContainerResponseContext response)
+    {
+      EntityManager entityManager = (EntityManager) request.getProperty(EntityTransactionFilter.PERSISTENCE_ENTITY_MANAGER_LOOKUP);
+      if (entityManager == null)
+      {
+        return;
+      }
+
+      EntityTransaction tx = entityManager.getTransaction();
+
+      persistenceLog.debug("Transaction is " + tx + " , active ? " + (tx.isActive()?"yes":"no"));
+
+      if (tx != null && tx.isActive())
+      {
+        if (tx.getRollbackOnly() || response.getStatus() >= 400)
+        {
+          persistenceLog.debug("Rolling back transaction");
+          try
+          {
+            tx.rollback();
+          } catch (Exception e) {
+            persistenceLog.warn("Failed to rollback transaction ", e);
+          }
+        }
+        else
+        {
+          persistenceLog.debug("Commit transaction");
+          try
+          {
+            tx.commit();
+          } catch (Exception e) {
+            persistenceLog.error("Failed to commit transaction ", e);
+          }
+        }
+      }
+      if (entityManager.isOpen())
+      {
+        try
+        {
+          entityManager.close();
+        } catch (Exception e) {
+          persistenceLog.warn("Failed to closed EntityManager", e);
+        }
+      }
+    }
   }
 
 }
