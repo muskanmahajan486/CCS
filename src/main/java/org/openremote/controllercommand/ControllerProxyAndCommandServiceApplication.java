@@ -5,8 +5,8 @@ import org.openremote.beehive.EntityTransactionFilter;
 import org.openremote.controllercommand.proxy.ProxyServer;
 import org.openremote.controllercommand.resources.ControllerCommandResource;
 import org.openremote.controllercommand.resources.ControllerCommandsResource;
-import org.openremote.controllercommand.service.impl.AccountServiceImpl;
-import org.openremote.controllercommand.service.impl.ControllerCommandServiceImpl;
+import org.openremote.controllercommand.service.AccountService;
+import org.openremote.controllercommand.service.ControllerCommandService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,9 +43,9 @@ public class ControllerProxyAndCommandServiceApplication extends ResourceConfig
     register(EntityPersistence.class);
 
     GenericDAO genericDAO = new GenericDAO();
-    final AccountServiceImpl accountService = new AccountServiceImpl();
+    final AccountService accountService = new AccountService();
     accountService.setGenericDAO(genericDAO);
-    final ControllerCommandServiceImpl controllerCommandService = new ControllerCommandServiceImpl();
+    final ControllerCommandService controllerCommandService = new ControllerCommandService();
     controllerCommandService.setGenericDAO(genericDAO);
 
     String proxyHostname = config.getProperty("proxy.hostname", "localhost");

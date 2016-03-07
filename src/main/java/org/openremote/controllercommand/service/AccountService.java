@@ -19,20 +19,50 @@
 */
 package org.openremote.controllercommand.service;
 
+import org.apache.commons.codec.binary.Base64;
+import org.openremote.controllercommand.GenericDAO;
 import org.openremote.controllercommand.domain.User;
+import org.springframework.security.authentication.encoding.Md5PasswordEncoder;
 
 import javax.persistence.EntityManager;
 
+
 /**
- * Account service.
+ * Account service implementation.
  * 
  * @author Dan Cong
- *
  */
-public interface AccountService {
+public class AccountService
+{
+  public static final String HTTP_AUTH_HEADER_NAME= "Authorization";
+  public static final String HTTP_BASIC_AUTH_HEADER_VALUE_PREFIX= "Basic ";
+  
+  protected GenericDAO genericDAO;
 
-  User loadByUsername(EntityManager entityManager, String username);
+  public void setGenericDAO(GenericDAO genericDAO) {
+     this.genericDAO = genericDAO;
+  }
 
-  User loadByHTTPBasicCredentials(EntityManager entityManager, String credentials);
+   public User loadByUsername(EntityManager entityManager, String username) {
+    return genericDAO.getByNonIdField(entityManager, User.class, "username", username);
+   }
 
+   public User loadByHTTPBasicCredentials(EntityManager entityManager, String credentials) {
+      if (credentials.startsWith(HTTP_BASIC_AUTH_HEADER_VALUE_PREFIX)) {
+         credentials = credentials.replaceAll(HTTP_BASIC_AUTH_HEADER_VALUE_PREFIX, "");
+         credentials = new String(Base64.decodeBase64(credentials.getBytes()));
+         String[] arr = credentials.split(":");
+         if (arr.length == 2) {
+            String username = arr[0];
+            String password = arr[1];
+            User user = loadByUsername(entityManager, username);
+            String encodedPassword = new Md5PasswordEncoder().encodePassword(password, username);
+            if (user != null && user.getPassword().equals(encodedPassword)) {
+               return user;
+            }
+         }
+      }
+      // let's be lax and not throw a BAD_REQUEST to allow the user to retry
+      return null;
+   }
 }
