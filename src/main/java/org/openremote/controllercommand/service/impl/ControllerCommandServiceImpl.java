@@ -30,6 +30,7 @@ import org.openremote.controllercommand.domain.User;
 import org.openremote.controllercommand.service.ControllerCommandService;
 
 import javax.persistence.EntityManager;
+import javax.persistence.NoResultException;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Fetch;
@@ -73,10 +74,10 @@ public class ControllerCommandServiceImpl implements ControllerCommandService
     accountJoin.fetch("users");
     controllerQuery.select(controllerRoot);
     controllerQuery.where(criteriaBuilder.equal(controllerRoot.get("oid"), oid));
-    Controller controller = entityManager.createQuery(controllerQuery).getSingleResult();
-
-    if (controller == null)
-    {
+    Controller controller;
+    try {
+      controller = entityManager.createQuery(controllerQuery).getSingleResult();
+    } catch (NoResultException e) {
       return Collections.emptyList();
     }
 
