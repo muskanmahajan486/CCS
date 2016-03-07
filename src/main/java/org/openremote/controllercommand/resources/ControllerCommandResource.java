@@ -11,6 +11,8 @@ import org.openremote.controllercommand.domain.ControllerCommandDTO.Type;
 import org.openremote.controllercommand.domain.User;
 import org.openremote.controllercommand.service.AccountService;
 import org.openremote.controllercommand.service.ControllerCommandService;
+import org.openremote.controllercommand.service.impl.AccountServiceImpl;
+import org.openremote.controllercommand.service.impl.ControllerCommandServiceImpl;
 import org.openremote.rest.GenericResourceResultWithErrorMessage;
 
 import javax.inject.Inject;
@@ -31,10 +33,10 @@ import javax.ws.rs.core.Response;
 public class ControllerCommandResource
 {
   @Inject
-  private ControllerCommandService controllerCommandService;
+  private ControllerCommandServiceImpl controllerCommandService;
 
   @Inject
-  private AccountService accountService;
+  private AccountServiceImpl accountService;
 
   /**
    * Mark the controllerCommand with the given id as DONE<p>

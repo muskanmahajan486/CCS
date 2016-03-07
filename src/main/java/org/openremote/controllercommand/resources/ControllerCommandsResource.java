@@ -4,6 +4,7 @@ import flexjson.JSONSerializer;
 import org.openremote.beehive.EntityTransactionFilter;
 import org.openremote.controllercommand.domain.ControllerCommandDTO;
 import org.openremote.controllercommand.service.ControllerCommandService;
+import org.openremote.controllercommand.service.impl.ControllerCommandServiceImpl;
 import org.openremote.rest.GenericResourceResultWithErrorMessage;
 
 import javax.inject.Inject;
@@ -25,9 +26,8 @@ import java.util.List;
 @Path("/")
 public class ControllerCommandsResource
 {
-
   @Inject
-  private ControllerCommandService controllerCommandService;
+  private ControllerCommandServiceImpl controllerCommandService;
 
   /**
    * Return a list of all not finished ControllerCommands<p>
