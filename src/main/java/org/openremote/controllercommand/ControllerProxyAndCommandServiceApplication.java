@@ -23,22 +23,12 @@ import java.util.Properties;
 
 public class ControllerProxyAndCommandServiceApplication extends ResourceConfig
 {
-  // TODO: get context name from init param
   static private EntityManagerFactory entityManagerFactory;
 
   protected final static Logger persistenceLog = LoggerFactory.getLogger(ControllerProxyAndCommandServiceApplication.class);
 
   public ControllerProxyAndCommandServiceApplication()
   {
-    entityManagerFactory = Persistence.createEntityManagerFactory("CCS-MySQL");
-    register(EntityPersistence.class);
-
-    GenericDAO genericDAO = new GenericDAO();
-    final AccountServiceImpl accountService = new AccountServiceImpl();
-    accountService.setGenericDAO(genericDAO);
-    final ControllerCommandServiceImpl controllerCommandService = new ControllerCommandServiceImpl();
-    controllerCommandService.setGenericDAO(genericDAO);
-
     Properties config = new Properties();
     try
     {
@@ -48,6 +38,16 @@ public class ControllerProxyAndCommandServiceApplication extends ResourceConfig
       // TODO: log
       e.printStackTrace();
     }
+
+    entityManagerFactory = Persistence.createEntityManagerFactory(config.getProperty("persistenceUnitName", "CCS-MySQL"));
+    register(EntityPersistence.class);
+
+    GenericDAO genericDAO = new GenericDAO();
+    final AccountServiceImpl accountService = new AccountServiceImpl();
+    accountService.setGenericDAO(genericDAO);
+    final ControllerCommandServiceImpl controllerCommandService = new ControllerCommandServiceImpl();
+    controllerCommandService.setGenericDAO(genericDAO);
+
 
     String proxyHostname = config.getProperty("proxy.hostname", "localhost");
     Integer proxyTimeout = getIntegerConfiguration(config, "proxy.timeout", 10000);
