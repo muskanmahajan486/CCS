@@ -34,41 +34,6 @@
       <param-value>org.openremote.controllercommand.ControllerProxyAndCommandServiceApplication</param-value>
     </init-param>
 
-    <init-param>
-      <param-name>proxy.hostname</param-name>
-      <param-value>localhost</param-value>
-    </init-param>
-
-    <init-param>
-      <param-name>proxy.timeout</param-name>
-      <param-value>10000</param-value>
-    </init-param>
-
-    <init-param>
-      <param-name>proxy.port</param-name>
-      <param-value>10000</param-value>
-    </init-param>
-
-    <init-param>
-      <param-name>proxy.clientPortRange</param-name>
-      <param-value>30000-30010</param-value>
-    </init-param>
-
-    <init-param>
-      <param-name>proxy.useSSL</param-name>
-      <param-value>true</param-value>
-    </init-param>
-
-    <init-param>
-      <param-name>proxy.keystore</param-name>
-      <param-value>/keystore.ks</param-value>
-    </init-param>
-
-    <init-param>
-      <param-name>proxy.keystorePassword</param-name>
-      <param-value>storepass</param-value>
-    </init-param>
-
     <load-on-startup>1</load-on-startup>
   </servlet>
 
