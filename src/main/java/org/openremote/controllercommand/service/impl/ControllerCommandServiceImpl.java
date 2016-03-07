@@ -20,6 +20,7 @@
 package org.openremote.controllercommand.service.impl;
 
 import org.openremote.controllercommand.GenericDAO;
+import org.openremote.controllercommand.domain.Account;
 import org.openremote.controllercommand.domain.Controller;
 import org.openremote.controllercommand.domain.ControllerCommand;
 import org.openremote.controllercommand.domain.ControllerCommand.State;
@@ -31,6 +32,7 @@ import org.openremote.controllercommand.service.ControllerCommandService;
 import javax.persistence.EntityManager;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Fetch;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 import java.util.ArrayList;
@@ -67,7 +69,8 @@ public class ControllerCommandServiceImpl implements ControllerCommandService
     CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
     CriteriaQuery<Controller> controllerQuery = criteriaBuilder.createQuery(Controller.class);
     Root<Controller> controllerRoot = controllerQuery.from(Controller.class);
-    controllerRoot.fetch("account.users");
+    Fetch<Controller, Account> accountJoin = controllerRoot.fetch("account");
+    accountJoin.fetch("users");
     controllerQuery.select(controllerRoot);
     controllerQuery.where(criteriaBuilder.equal(controllerRoot.get("oid"), oid));
     Controller controller = entityManager.createQuery(controllerQuery).getSingleResult();
