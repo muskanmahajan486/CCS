@@ -20,23 +20,23 @@ dependencies {
     compile "org.json:json:20090211"
 
     compile "net.sf.flexjson:flexjson:$flexjsonVersion"
-		
-		compile "org.slf4j:slf4j-api:$slf4jVersion"
-		
+    
+    compile "org.slf4j:slf4j-api:$slf4jVersion"
+    
     compile "org.glassfish.jersey.containers:jersey-container-servlet-core:$jerseyVersion"
     compile "javax.ws.rs:javax.ws.rs-api:$jaxrsVersion"
     
     compile "org.hibernate.javax.persistence:hibernate-jpa-2.1-api:1.0.0.Final"
-		
+    
     compile "org.hibernate:hibernate-core:$hibernateVersion"
     compile "org.hibernate:hibernate-entitymanager:$hibernateVersion"
-		
-		compile "mysql:mysql-connector-java:$mysqlConnectorVersion"
-		
+    
+    compile "mysql:mysql-connector-java:$mysqlConnectorVersion"
+    
 
-		compile "log4j:log4j:$log4jVersion"
-		compile "commons-lang:commons-lang:$commonsLangVersion"
-		compile "commons-codec:commons-codec:$commonsCodecVersion"
+    compile "log4j:log4j:$log4jVersion"
+    compile "commons-lang:commons-lang:$commonsLangVersion"
+    compile "commons-codec:commons-codec:$commonsCodecVersion"
     compile "commons-dbcp:commons-dbcp:$commonsDbcpVersion"
 
     compile "org.springframework.security:spring-security-core:$springVersion"
