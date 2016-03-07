@@ -48,7 +48,6 @@ public class ControllerProxyAndCommandServiceApplication extends ResourceConfig
     final ControllerCommandServiceImpl controllerCommandService = new ControllerCommandServiceImpl();
     controllerCommandService.setGenericDAO(genericDAO);
 
-
     String proxyHostname = config.getProperty("proxy.hostname", "localhost");
     Integer proxyTimeout = getIntegerConfiguration(config, "proxy.timeout", 10000);
     Integer proxyPort = getIntegerConfiguration(config, "proxy.port", 10000);
@@ -71,7 +70,6 @@ public class ControllerProxyAndCommandServiceApplication extends ResourceConfig
                  bind(controllerCommandService);
                }
              });
-
   }
 
   private Integer getIntegerConfiguration(Properties config, String propertyName, Integer defaultValue) {
