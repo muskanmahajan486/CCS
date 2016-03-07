@@ -1,28 +1,23 @@
 package org.openremote.controllercommand.proxy;
 
-import java.io.IOException;
-import java.io.OutputStream;
-import java.net.HttpURLConnection;
-import java.net.InetSocketAddress;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.nio.ByteBuffer;
-import java.nio.channels.SelectionKey;
-import java.nio.channels.ServerSocketChannel;
-import java.nio.channels.SocketChannel;
-import java.nio.charset.Charset;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import javax.net.ssl.SSLServerSocketFactory;
-import javax.persistence.EntityManager;
-
 import org.apache.log4j.Logger;
 import org.openremote.controllercommand.ControllerProxyAndCommandServiceApplication;
 import org.openremote.controllercommand.domain.InitiateProxyControllerCommand;
 import org.openremote.controllercommand.domain.User;
 import org.openremote.controllercommand.service.AccountService;
 import org.openremote.controllercommand.service.ControllerCommandService;
+
+import javax.net.ssl.SSLServerSocketFactory;
+import javax.persistence.EntityManager;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.InetSocketAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.nio.charset.Charset;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class ProxyClient extends Proxy {
 

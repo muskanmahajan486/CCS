@@ -1,5 +1,15 @@
 package org.openremote.controllercommand.proxy;
 
+import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
+import org.openremote.controllercommand.ControllerProxyAndCommandServiceApplication;
+import org.openremote.controllercommand.service.AccountService;
+import org.openremote.controllercommand.service.ControllerCommandService;
+
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLServerSocketFactory;
+import javax.net.ssl.TrustManagerFactory;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.ServerSocket;
@@ -7,18 +17,6 @@ import java.net.Socket;
 import java.security.KeyStore;
 import java.util.HashSet;
 import java.util.Set;
-
-import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLServerSocket;
-import javax.net.ssl.SSLServerSocketFactory;
-import javax.net.ssl.TrustManagerFactory;
-
-import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
-import org.openremote.controllercommand.ControllerProxyAndCommandServiceApplication;
-import org.openremote.controllercommand.service.AccountService;
-import org.openremote.controllercommand.service.ControllerCommandService;
 
 public class ProxyServer extends Thread
 {
