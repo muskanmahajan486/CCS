@@ -88,7 +88,7 @@
     <!-- User roles required to access CCS resources... -->
 
     <auth-constraint>
-      <role-name>account-owner</role-name>
+      <role-name>ROLE_ADMIN</role-name>
     </auth-constraint>
 
   </security-constraint>
@@ -106,10 +106,10 @@
   <security-role>
 
     <description>
-      account-owner is the administrator role for a specific account.
+      ROLE_ADMIN is the administrator role for a specific account (it's the account owner).
     </description>
 
-    <role-name>account-owner</role-name>
+    <role-name>ROLE_ADMIN</role-name>
 
   </security-role>
   
