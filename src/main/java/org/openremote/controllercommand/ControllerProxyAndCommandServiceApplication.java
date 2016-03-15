@@ -10,6 +10,7 @@ import org.openremote.controllercommand.service.ControllerCommandService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.PreDestroy;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.EntityTransaction;
@@ -40,6 +41,7 @@ public class ControllerProxyAndCommandServiceApplication extends ResourceConfig
     }
 
     entityManagerFactory = Persistence.createEntityManagerFactory(config.getProperty("persistenceUnitName", "CCS-MySQL"));
+    persistenceLog.info("EntityManagerFactory has been created");
     register(EntityPersistence.class);
 
     GenericDAO genericDAO = new GenericDAO();
@@ -70,6 +72,16 @@ public class ControllerProxyAndCommandServiceApplication extends ResourceConfig
                  bind(controllerCommandService);
                }
              });
+  }
+
+  @PreDestroy
+  private void testDestroy() {
+    try {
+      entityManagerFactory.close();
+      persistenceLog.info("EntityManagerFactory has been closed");
+    } catch (Exception e) {
+      persistenceLog.warn("Could not close EntityManagerFactory");
+    }
   }
 
   private Integer getIntegerConfiguration(Properties config, String propertyName, Integer defaultValue) {
