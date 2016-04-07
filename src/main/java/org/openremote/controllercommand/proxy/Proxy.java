@@ -1,15 +1,16 @@
 package org.openremote.controllercommand.proxy;
 
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
 
-import org.apache.log4j.Logger;
-
 public abstract class Proxy extends Thread {
 
-   private static Logger logger = Logger.getLogger(Proxy.class);
+  protected final static org.slf4j.Logger logger = LoggerFactory.getLogger(Proxy.class);
+
    protected Socket consoleSocket;
    protected boolean halted;
    protected int timeout;

@@ -1,11 +1,11 @@
 package org.openremote.controllercommand.proxy;
 
-import org.apache.log4j.Logger;
 import org.openremote.controllercommand.ControllerProxyAndCommandServiceApplication;
 import org.openremote.controllercommand.domain.InitiateProxyControllerCommand;
 import org.openremote.controllercommand.domain.User;
 import org.openremote.controllercommand.service.AccountService;
 import org.openremote.controllercommand.service.ControllerCommandService;
+import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.SSLServerSocketFactory;
 import javax.persistence.EntityManager;
@@ -21,7 +21,8 @@ import java.util.regex.Pattern;
 
 public class ProxyClient extends Proxy {
 
-   private static Logger logger = Logger.getLogger(ProxyClient.class);
+  protected final static org.slf4j.Logger logger = LoggerFactory.getLogger(ProxyServer.class);
+
    private ProxyServer server;
    private String hostName;
    private int minClientPort;
