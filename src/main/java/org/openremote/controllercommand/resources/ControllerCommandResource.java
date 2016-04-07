@@ -4,6 +4,7 @@ import flexjson.JSONSerializer;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.openremote.beehive.EntityTransactionFilter;
+import org.openremote.controllercommand.ControllerProxyAndCommandServiceApplication;
 import org.openremote.controllercommand.domain.Account;
 import org.openremote.controllercommand.domain.ControllerCommand;
 import org.openremote.controllercommand.domain.ControllerCommandDTO;
@@ -12,6 +13,9 @@ import org.openremote.controllercommand.domain.User;
 import org.openremote.controllercommand.service.AccountService;
 import org.openremote.controllercommand.service.ControllerCommandService;
 import org.openremote.rest.GenericResourceResultWithErrorMessage;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
@@ -36,6 +40,8 @@ public class ControllerCommandResource
   @Inject
   private AccountService accountService;
 
+  protected final static Logger log = LoggerFactory.getLogger(ControllerCommandResource.class);
+
   /**
    * Mark the controllerCommand with the given id as DONE<p>
    * REST Url: /rest/command/{commandId} 
@@ -52,6 +58,7 @@ public class ControllerCommandResource
     {
       if (commandId != null)
       {
+        log.info("Asked to acknowledge command with id " + commandId);
         Long id = Long.valueOf(commandId);
         ControllerCommand controllerCommand = controllerCommandService.findControllerCommandById(getEntityManager(request), id);
         controllerCommandService.closeControllerCommand(controllerCommand);
@@ -62,6 +69,7 @@ public class ControllerCommandResource
       }
     } catch (Exception e)
     {
+      log.error("Error while acknowledging a ControllerCommand", e);
       result = new GenericResourceResultWithErrorMessage(e.getMessage(), null);
     }
     return Response.ok(new JSONSerializer().exclude("*.class").deepSerialize(result)).build();

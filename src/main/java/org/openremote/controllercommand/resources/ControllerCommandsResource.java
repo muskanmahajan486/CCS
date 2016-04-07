@@ -5,6 +5,8 @@ import org.openremote.beehive.EntityTransactionFilter;
 import org.openremote.controllercommand.domain.ControllerCommandDTO;
 import org.openremote.controllercommand.service.ControllerCommandService;
 import org.openremote.rest.GenericResourceResultWithErrorMessage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
@@ -28,6 +30,8 @@ public class ControllerCommandsResource
   @Inject
   private ControllerCommandService controllerCommandService;
 
+  protected final static Logger log = LoggerFactory.getLogger(ControllerCommandsResource.class);
+
   /**
    * Return a list of all not finished ControllerCommands<p>
    * REST Url: /rest/commands/{controllerOid} -> return all not finished controller commands for the given controllerOid
@@ -45,17 +49,21 @@ public class ControllerCommandsResource
     {
       if (controllerOid != null)
       {
+        log.info("Asked to get controller commands list for controller id " + controllerOid);
         Long id = Long.valueOf(controllerOid);
-        
+
         String username = request.getUserPrincipal().getName();
+        log.info("Query done by " + username);
 
         List<ControllerCommandDTO> commands = controllerCommandService.queryByControllerOidForUser(getEntityManager(request), id, username);
         result = new GenericResourceResultWithErrorMessage(null, commands);
       } else {
+        log.info("No controller oid provided");
         result = new GenericResourceResultWithErrorMessage(null, new ArrayList<ControllerCommandDTO>());
       }
     } catch (Exception e)
     {
+      log.error("Error getting controller commands", e);
       result = new GenericResourceResultWithErrorMessage(e.getMessage(), null);
     }
     return Response.ok(new JSONSerializer().exclude("*.class").deepSerialize(result)).build();
