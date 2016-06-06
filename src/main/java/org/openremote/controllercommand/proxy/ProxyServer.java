@@ -121,7 +121,7 @@ public class ProxyServer extends Thread
         }
 
         ks.load(keystoreStream, this.keystorePassword.toCharArray());
-        logger.info("Keystore loaded, it contains " + ks.size() + ((ks.size() > 1)?" entries":"entry"));
+        logger.info("Keystore loaded, it contains " + ks.size() + ((ks.size() > 1)?" entries":" entry"));
 
         trustManagerFactory.init(ks);
         keyManagerFactory.init(ks, this.keystorePassword.toCharArray());
