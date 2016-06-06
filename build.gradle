@@ -31,7 +31,8 @@ dependencies {
     
     compile "org.hibernate:hibernate-core:$hibernateVersion"
     compile "org.hibernate:hibernate-entitymanager:$hibernateVersion"
-    
+    compile "org.hibernate:hibernate-c3p0:$hibernateVersion"
+
     compile "mysql:mysql-connector-java:$mysqlConnectorVersion"
     
     compile "commons-lang:commons-lang:$commonsLangVersion"
