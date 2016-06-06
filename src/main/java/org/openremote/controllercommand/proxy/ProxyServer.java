@@ -113,8 +113,16 @@ public class ProxyServer extends Thread
         TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
         KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
         KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
+
         InputStream keystoreStream = this.getClass().getResourceAsStream(this.keystore);
+        if (keystoreStream == null) {
+          logger.error("The specified keystore " + this.keystore + " can not be loaded");
+          throw new RuntimeException("The specified keystore " + this.keystore + " can not be loaded");
+        }
+
         ks.load(keystoreStream, this.keystorePassword.toCharArray());
+        logger.info("Keystore loaded, it contains " + ks.size() + ((ks.size() > 1)?" entries":"entry"));
+
         trustManagerFactory.init(ks);
         keyManagerFactory.init(ks, this.keystorePassword.toCharArray());
 
