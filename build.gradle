@@ -45,3 +45,27 @@ dependencies {
 
     testCompile "junit:junit:$junitVersion"
 }
+
+war {
+    archiveName = 'ccs.war'
+
+    if (project.hasProperty("targetEnv")) {
+        def targetEnvFolder = 'environments/' + targetEnv;
+        if (new File(targetEnvFolder).exists()) {
+            from(targetEnvFolder) {
+                include '*.properties'
+                include '*.xml'
+                exclude 'web.xml'
+                into ('WEB-INF/classes')
+            }
+            from(targetEnvFolder) {
+                include 'web.xml'
+                into ('WEB-INF')
+            }
+        } else {
+            println "*** No configuration exists for target environment"
+        }
+    } else {
+        println "*** No target environment defined"
+    }
+}
