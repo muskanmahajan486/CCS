@@ -11,6 +11,7 @@ import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.TrustManagerFactory;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.ServerSocket;
@@ -108,13 +109,25 @@ public class ProxyServer extends Thread
     {
       // Specifying the Keystore details
       logger.info("Load keystore: " + this.keystore);
+      InputStream keystoreStream = null;
       try
       {
         TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
         KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
         KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
 
-        InputStream keystoreStream = this.getClass().getResourceAsStream(this.keystore);
+        // Path to keystore starts with a /, consider an absolute path and load as a file instead of a resource
+        if (this.keystore.startsWith("/")) {
+          try
+          {
+            keystoreStream = new FileInputStream(this.keystore);
+          } catch (IOException e) {
+            logger.error("The specified keystore " + this.keystore + " can not be loaded");
+            throw new RuntimeException("The specified keystore " + this.keystore + " can not be loaded");
+          }
+        } else {
+          keystoreStream = this.getClass().getResourceAsStream(this.keystore);
+        }
         if (keystoreStream == null) {
           logger.error("The specified keystore " + this.keystore + " can not be loaded");
           throw new RuntimeException("The specified keystore " + this.keystore + " can not be loaded");
@@ -132,6 +145,17 @@ public class ProxyServer extends Thread
       } catch (Exception e)
       {
         throw new RuntimeException(e);
+      } finally
+      {
+         if (keystoreStream != null) {
+           try
+           {
+             keystoreStream.close();
+           } catch (IOException e)
+           {
+             logger.warn("Failed to close stream to keystore", e);
+           }
+         }
       }
     }
 
