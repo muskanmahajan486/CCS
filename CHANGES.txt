@@ -1,12 +1,42 @@
-CCS-3
-=====
+CCS-15
+======
 
- - Use Servlet security instead of Spring Security
+ - Allow keystore to be loaded from file system, not just classpath
 
-CCS-2
-=====
+CCS-16
+======
 
- - Add API to post a command to the queue
+ - Have appropriate messages when keystore is loaded / not loaded
+
+CCS-17
+======
+
+ - Support building for multiple environments
+
+CCS-14
+======
+
+ - Use proper DB connection pooling and connection refresh
+
+CCS Pro 1.5.0
+=============
+
+New features:
+ - Using gradle as build system (CCS-5)
+ - Remove usage of Spring (CCS-6)
+ - Replace Restlet with JAX-RS and Jersey (CCS-4)
+ - Improve logging and use slf4j as logging engine (CCS-8)
+
+Fixes
+ - Fixed EntityManagerFactory lifecycle that prevented clean container shutdown (CCS-12)
+ 
+CCS Pro 1.4.0
+=============
+
+New features:
+ - Add API to post a command to the queue (CCS-2)
+ - Use Servlet security instead of Spring Security (CCS-3)
+
 
 CCS Pro 1.1.0
 =============
