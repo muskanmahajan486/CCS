@@ -48,7 +48,7 @@
 
     <properties>
       <property name = "javax.persistence.jdbc.driver" value = "com.mysql.jdbc.Driver"/>
-      <property name = "javax.persistence.jdbc.url" value = "jdbc:mysql://localhost:3306/beehive?useUnicode=true&amp;characterEncoding=UTF-8"/>
+      <property name = "javax.persistence.jdbc.url" value = "jdbc:mysql://db:3306/beehive?useUnicode=true&amp;characterEncoding=UTF-8"/>
 
       <property name = "javax.persistence.jdbc.user" value = "beehive"/>
       <property name = "javax.persistence.jdbc.password" value = "beehive"/>

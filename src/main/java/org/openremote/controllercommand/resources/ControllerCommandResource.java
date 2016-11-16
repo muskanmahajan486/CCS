@@ -24,7 +24,6 @@ import flexjson.JSONSerializer;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.openremote.beehive.EntityTransactionFilter;
-import org.openremote.controllercommand.ControllerProxyAndCommandServiceApplication;
 import org.openremote.controllercommand.domain.Account;
 import org.openremote.controllercommand.domain.ControllerCommand;
 import org.openremote.controllercommand.domain.ControllerCommandDTO;
@@ -56,6 +55,10 @@ public class ControllerCommandResource
 {
   @Inject
   private ControllerCommandService controllerCommandService;
+
+  @Inject
+  private ControllerSessionHandler controllerSessionHandler;
+
 
   @Inject
   private AccountService accountService;
@@ -123,6 +126,10 @@ public class ControllerCommandResource
         }
         ControllerCommand command = new ControllerCommand(account, Type.DOWNLOAD_DESIGN);
         controllerCommandService.save(getEntityManager(request), command);
+        for (User userController : account.getUsers()) {
+          controllerSessionHandler.sendToController(userController.getUsername(), jsonData);
+        }
+
         GenericResourceResultWithErrorMessage result = new GenericResourceResultWithErrorMessage(null, command);
         return Response.ok(new JSONSerializer().exclude("*.class").exclude("result.account").deepSerialize(result)).build();
       } catch (IllegalArgumentException e) {

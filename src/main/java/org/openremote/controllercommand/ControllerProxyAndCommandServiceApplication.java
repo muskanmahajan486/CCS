@@ -20,11 +20,16 @@
  */
 package org.openremote.controllercommand;
 
+import org.glassfish.hk2.api.ServiceLocator;
 import org.glassfish.jersey.server.ResourceConfig;
+import org.glassfish.jersey.server.spi.Container;
+import org.glassfish.jersey.server.spi.ContainerLifecycleListener;
 import org.openremote.beehive.EntityTransactionFilter;
 import org.openremote.controllercommand.proxy.ProxyServer;
 import org.openremote.controllercommand.resources.ControllerCommandResource;
 import org.openremote.controllercommand.resources.ControllerCommandsResource;
+import org.openremote.controllercommand.resources.ControllerSessionHandler;
+import org.openremote.controllercommand.resources.WebsocketControllerCommandsResource;
 import org.openremote.controllercommand.service.AccountService;
 import org.openremote.controllercommand.service.ControllerCommandService;
 import org.slf4j.Logger;
@@ -35,12 +40,20 @@ import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.EntityTransaction;
 import javax.persistence.Persistence;
+import javax.servlet.ServletContext;
+import javax.websocket.Endpoint;
+import javax.websocket.server.ServerApplicationConfig;
+import javax.websocket.server.ServerEndpointConfig;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerRequestFilter;
 import javax.ws.rs.container.ContainerResponseContext;
 import javax.ws.rs.container.ContainerResponseFilter;
+import javax.ws.rs.core.Context;
 import java.io.IOException;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Properties;
+import java.util.Set;
 
 public class ControllerProxyAndCommandServiceApplication extends ResourceConfig
 {
@@ -70,6 +83,8 @@ public class ControllerProxyAndCommandServiceApplication extends ResourceConfig
     final ControllerCommandService controllerCommandService = new ControllerCommandService();
     controllerCommandService.setGenericDAO(genericDAO);
 
+    final ControllerSessionHandler controllerSessionHandler = ControllerSessionHandler.getInstance();
+
     String proxyHostname = config.getProperty("proxy.hostname", "localhost");
     Integer proxyTimeout = getIntegerConfiguration(config, "proxy.timeout", 10000);
     Integer proxyPort = getIntegerConfiguration(config, "proxy.port", 10000);
@@ -80,8 +95,13 @@ public class ControllerProxyAndCommandServiceApplication extends ResourceConfig
     ProxyServer ps = new ProxyServer(proxyHostname, proxyTimeout, proxyPort, proxyClientPortRange, useSSL, keystore, keystorePassword, controllerCommandService, accountService, this);
     ps.start();
 
+
+      //  serviceLocator =
+      //  MyService service = serviceLocator.createAndInitialize(ControllerSessionHandler.class);
+
     register(ControllerCommandResource.class);
     register(ControllerCommandsResource.class);
+
 
     register(new org.glassfish.hk2.utilities.binding.AbstractBinder()
              {
@@ -90,11 +110,13 @@ public class ControllerProxyAndCommandServiceApplication extends ResourceConfig
                {
                  bind(accountService);
                  bind(controllerCommandService);
+                 bind(controllerSessionHandler);
                }
              });
   }
 
-  @PreDestroy
+
+    @PreDestroy
   private void testDestroy() {
     try {
       entityManagerFactory.close();
