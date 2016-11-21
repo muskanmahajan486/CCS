@@ -2,8 +2,14 @@ package org.openremote.controllercommand.resources;
 
 
 import org.json.JSONObject;
+import org.openremote.controllercommand.ControllerProxyAndCommandServiceApplication;
+import org.openremote.controllercommand.domain.ControllerCommand;
+import org.openremote.controllercommand.service.ControllerCommandService;
 
 import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
+import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
 import javax.websocket.Session;
 import java.io.IOException;
 import java.util.HashMap;
@@ -14,7 +20,20 @@ import java.util.logging.Logger;
 @ApplicationScoped
 public class ControllerSessionHandler {
 
+    private ControllerCommandService controllerCommandService;
+
+    private ControllerProxyAndCommandServiceApplication controllerProxyAndCommandServiceApplication;
+
     private ControllerSessionHandler() {}
+
+    public void setControllerCommandService(ControllerCommandService controllerCommandService) {
+        this.controllerCommandService = controllerCommandService;
+    }
+
+    public void setEntityFilter(ControllerProxyAndCommandServiceApplication controllerProxyAndCommandServiceApplication) {
+        this.controllerProxyAndCommandServiceApplication = controllerProxyAndCommandServiceApplication;
+    }
+
 
     private static class SingletonHolder
     {
@@ -64,8 +83,19 @@ public class ControllerSessionHandler {
         //TODO: handle message from controller ?
         //remove message in db
         //close command
-
+        EntityManager entityManager = controllerProxyAndCommandServiceApplication.createEntityManager();
+        Long id = Long.valueOf(message);
+        ControllerCommand controllerCommand = controllerCommandService.findControllerCommandById(entityManager, id);
+        controllerCommandService.closeControllerCommand(controllerCommand);
+        try {
+            controllerCommandService.update(entityManager, controllerCommand);
+            controllerProxyAndCommandServiceApplication.commitEntityManager(entityManager);
+        } catch (Exception ex) {
+            controllerProxyAndCommandServiceApplication.rollbackEntityManager(entityManager);
+        }
 
     }
+
+
 
 }

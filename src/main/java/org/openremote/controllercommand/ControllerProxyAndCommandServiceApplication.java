@@ -72,6 +72,8 @@ public class ControllerProxyAndCommandServiceApplication extends ResourceConfig
     controllerCommandService.setGenericDAO(genericDAO);
 
     final ControllerSessionHandler controllerSessionHandler = ControllerSessionHandler.getInstance();
+    controllerSessionHandler.setEntityFilter(this);
+    controllerSessionHandler.setControllerCommandService(controllerCommandService);
 
     String proxyHostname = config.getProperty("proxy.hostname", "localhost");
     Integer proxyTimeout = getIntegerConfiguration(config, "proxy.timeout", 10000);
