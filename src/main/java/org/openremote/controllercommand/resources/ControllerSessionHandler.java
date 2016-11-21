@@ -62,6 +62,10 @@ public class ControllerSessionHandler {
 
     public void handleMessage(String message, Session session) {
         //TODO: handle message from controller ?
+        //remove message in db
+        //close command
+
+
     }
 
 }

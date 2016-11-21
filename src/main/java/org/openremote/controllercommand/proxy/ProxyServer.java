@@ -22,7 +22,7 @@ package org.openremote.controllercommand.proxy;
 
 import org.apache.commons.lang.StringUtils;
 import org.openremote.controllercommand.ControllerProxyAndCommandServiceApplication;
-import org.openremote.controllercommand.resources.ControllerCommandsResource;
+import org.openremote.controllercommand.resources.ControllerSessionHandler;
 import org.openremote.controllercommand.service.AccountService;
 import org.openremote.controllercommand.service.ControllerCommandService;
 import org.slf4j.LoggerFactory;
@@ -59,13 +59,16 @@ public class ProxyServer extends Thread
   private ControllerCommandService controllerCommandService;
   private SSLServerSocketFactory sslServerSocketfactory = null;
   private ControllerProxyAndCommandServiceApplication application;
+  private ControllerSessionHandler controllerSessionHandler;
+
 
   public ProxyServer(String proxyHostname, Integer proxyTimeout, Integer proxyPort, String proxyClientPortRange, Boolean useSSL, String keystore,
-          String keystorePassword, ControllerCommandService controllerCommandService, AccountService accountService, ControllerProxyAndCommandServiceApplication application)
+                     String keystorePassword, ControllerCommandService controllerCommandService, AccountService accountService, ControllerProxyAndCommandServiceApplication application, ControllerSessionHandler controllerSessionHandler)
   {
     this.accountService = accountService;
     this.controllerCommandService = controllerCommandService;
     this.application = application;
+    this.controllerSessionHandler = controllerSessionHandler;
 
     if (StringUtils.isEmpty(proxyHostname))
     {
@@ -237,7 +240,7 @@ public class ProxyServer extends Thread
     {
       logger.info("Got a client socket");
       ProxyClient client = new ProxyClient(this, clientSocket, timeout, hostName, minClientPort, maxClientPort, controllerCommandService,
-              accountService, sslServerSocketfactory, application);
+              accountService, sslServerSocketfactory, application, controllerSessionHandler);
       clients.add(client);
       logger.info("Starting client");
       client.start();

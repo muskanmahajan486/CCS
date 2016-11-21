@@ -20,16 +20,12 @@
  */
 package org.openremote.controllercommand;
 
-import org.glassfish.hk2.api.ServiceLocator;
 import org.glassfish.jersey.server.ResourceConfig;
-import org.glassfish.jersey.server.spi.Container;
-import org.glassfish.jersey.server.spi.ContainerLifecycleListener;
 import org.openremote.beehive.EntityTransactionFilter;
 import org.openremote.controllercommand.proxy.ProxyServer;
 import org.openremote.controllercommand.resources.ControllerCommandResource;
 import org.openremote.controllercommand.resources.ControllerCommandsResource;
 import org.openremote.controllercommand.resources.ControllerSessionHandler;
-import org.openremote.controllercommand.resources.WebsocketControllerCommandsResource;
 import org.openremote.controllercommand.service.AccountService;
 import org.openremote.controllercommand.service.ControllerCommandService;
 import org.slf4j.Logger;
@@ -40,20 +36,12 @@ import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.EntityTransaction;
 import javax.persistence.Persistence;
-import javax.servlet.ServletContext;
-import javax.websocket.Endpoint;
-import javax.websocket.server.ServerApplicationConfig;
-import javax.websocket.server.ServerEndpointConfig;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerRequestFilter;
 import javax.ws.rs.container.ContainerResponseContext;
 import javax.ws.rs.container.ContainerResponseFilter;
-import javax.ws.rs.core.Context;
 import java.io.IOException;
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.Properties;
-import java.util.Set;
 
 public class ControllerProxyAndCommandServiceApplication extends ResourceConfig
 {
@@ -92,7 +80,7 @@ public class ControllerProxyAndCommandServiceApplication extends ResourceConfig
     Boolean useSSL = getBooleanConfiguration(config, "proxy.useSSL", true);
     String keystore = config.getProperty("proxy.keystore", "keystore.ks");
     String keystorePassword = config.getProperty("proxy.keystorePassword", "storepass");
-    ProxyServer ps = new ProxyServer(proxyHostname, proxyTimeout, proxyPort, proxyClientPortRange, useSSL, keystore, keystorePassword, controllerCommandService, accountService, this);
+    ProxyServer ps = new ProxyServer(proxyHostname, proxyTimeout, proxyPort, proxyClientPortRange, useSSL, keystore, keystorePassword, controllerCommandService, accountService, this, controllerSessionHandler);
     ps.start();
 
 

@@ -95,16 +95,21 @@ public class ControllerCommandService
     List<ControllerCommandDTO> result = new ArrayList<ControllerCommandDTO>(list.size());
     for (ControllerCommand cmd : list)
     {
-      ControllerCommandDTO dto = new ControllerCommandDTO();
-      dto.setOid(cmd.getOid());
-      dto.setCommandType(cmd.getType().getLabel());
-      if (cmd instanceof InitiateProxyControllerCommand) {
-        dto.addParameter("token", ((InitiateProxyControllerCommand)cmd).getToken());
-        dto.addParameter("url", ((InitiateProxyControllerCommand)cmd).getUrl());
-      }
+      ControllerCommandDTO dto = getControllerCommandDTO(cmd);
       result.add(dto);
     }
     return result;
+  }
+
+  public static ControllerCommandDTO getControllerCommandDTO(ControllerCommand cmd) {
+    ControllerCommandDTO dto = new ControllerCommandDTO();
+    dto.setOid(cmd.getOid());
+    dto.setCommandType(cmd.getType().getLabel());
+    if (cmd instanceof InitiateProxyControllerCommand) {
+      dto.addParameter("token", ((InitiateProxyControllerCommand)cmd).getToken());
+      dto.addParameter("url", ((InitiateProxyControllerCommand)cmd).getUrl());
+    }
+    return dto;
   }
 
   public InitiateProxyControllerCommand saveProxyControllerCommand(EntityManager entityManager, User user, String url)

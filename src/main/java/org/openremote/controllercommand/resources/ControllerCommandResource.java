@@ -119,9 +119,7 @@ public class ControllerCommandResource {
                 controllerCommandService.save(getEntityManager(request), command);
 
                 GenericResourceResultWithErrorMessage result = new GenericResourceResultWithErrorMessage(null, command);
-                ControllerCommandDTO commandDTO = new ControllerCommandDTO();
-                commandDTO.setOid(command.getOid());
-                commandDTO.setCommandType(command.getType().getLabel());
+                ControllerCommandDTO commandDTO = ControllerCommandService.getControllerCommandDTO(command);
                 GenericResourceResultWithErrorMessage resultForWS = new GenericResourceResultWithErrorMessage(null, commandDTO);
                 controllerSessionHandler.sendToController(user.getUsername(), new JSONObject(new JSONSerializer().exclude("*.class").deepSerialize(resultForWS)));
                 return Response.ok(new JSONSerializer().exclude("*.class").exclude("result.account").deepSerialize(result)).build();

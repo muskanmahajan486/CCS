@@ -20,11 +20,17 @@
  */
 package org.openremote.controllercommand.proxy;
 
+import flexjson.JSONSerializer;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.openremote.controllercommand.ControllerProxyAndCommandServiceApplication;
+import org.openremote.controllercommand.domain.ControllerCommandDTO;
 import org.openremote.controllercommand.domain.InitiateProxyControllerCommand;
 import org.openremote.controllercommand.domain.User;
+import org.openremote.controllercommand.resources.ControllerSessionHandler;
 import org.openremote.controllercommand.service.AccountService;
 import org.openremote.controllercommand.service.ControllerCommandService;
+import org.openremote.rest.GenericResourceResultWithErrorMessage;
 import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.SSLServerSocketFactory;
@@ -50,10 +56,11 @@ public class ProxyClient extends Proxy {
    private AccountService accountService;
    private ControllerCommandService controllerCommandService;
    private SSLServerSocketFactory sslServerSocketFactory;
-  private ControllerProxyAndCommandServiceApplication application;
+   private ControllerProxyAndCommandServiceApplication application;
+   private ControllerSessionHandler controllerSessionHandler;
 
    public ProxyClient(ProxyServer server, Socket clientSocket, int timeout, String hostName, int minClientPort, int maxClientPort,
-                      ControllerCommandService controllerCommandService, AccountService accountService, SSLServerSocketFactory sslServerSocketFactory, ControllerProxyAndCommandServiceApplication application)  throws IOException {
+                      ControllerCommandService controllerCommandService, AccountService accountService, SSLServerSocketFactory sslServerSocketFactory, ControllerProxyAndCommandServiceApplication application, ControllerSessionHandler controllerSessionHandler) throws IOException {
       super(clientSocket, timeout);
       this.server = server;
       this.hostName = hostName;
@@ -62,7 +69,8 @@ public class ProxyClient extends Proxy {
       this.accountService = accountService;
       this.controllerCommandService = controllerCommandService;
       this.sslServerSocketFactory = sslServerSocketFactory;
-     this.application = application;
+      this.application = application;
+      this.controllerSessionHandler = controllerSessionHandler;
    }
 
    protected void onProxyExit() {
@@ -340,7 +348,14 @@ public class ProxyClient extends Proxy {
          application.rollbackEntityManager(entityManager);
        }
      }
-     return command;
+       ControllerCommandDTO commandDTO = ControllerCommandService.getControllerCommandDTO(command);
+       GenericResourceResultWithErrorMessage resultForWS = new GenericResourceResultWithErrorMessage(null, commandDTO);
+       try {
+          controllerSessionHandler.sendToController(user.getUsername(), new JSONObject(new JSONSerializer().exclude("*.class").deepSerialize(resultForWS)));
+       } catch (JSONException e) {
+          throw new RuntimeException(e);
+       }
+       return command;
    }
 
 }
