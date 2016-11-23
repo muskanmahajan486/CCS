@@ -124,6 +124,11 @@ public class ControllerCommandService
     controllerCommand.setState(State.DONE);
   }
 
+  public void markFailedControllerCommand(ControllerCommand controllerCommand)
+  {
+    controllerCommand.setState(State.FAILED);
+  }
+
   public ControllerCommand findControllerCommandById(EntityManager entityManager, Long id)
   {
     return entityManager.find(ControllerCommand.class, id);

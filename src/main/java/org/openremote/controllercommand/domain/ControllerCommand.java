@@ -52,7 +52,7 @@ public class ControllerCommand extends BusinessEntity {
 	 * the controller.
 	 */
 	public enum State {
-		OPEN, DONE;
+		OPEN, DONE, FAILED;
 	}
 
 	public ControllerCommand() {

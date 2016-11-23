@@ -25,7 +25,8 @@ repositories {
 }
 
 dependencies {
-    compile "org.openremote:or-commons:0.1.0"
+    //compile "org.openremote:or-commons:0.2.0"
+    compile files("../or-commons/output/or-commons.jar")
     compile "org.openremote:or-object-model:0.2.1"
 
     compile "org.json:json:20090211"
@@ -103,9 +104,7 @@ String dockerHostUrl() {
             (new URI(uri.scheme != 'tcp' ?: 'https' , uri.userInfo, uri.host, uri.port, uri.path, uri.query, uri.fragment)).toString()
         }
     } else {
-        org.gradle.internal.os.OperatingSystem.current().isLinux()
-        ? 'unix:///var/run/docker.sock'
-        : 'http://localhost:2375'
+        org.gradle.internal.os.OperatingSystem.current().isLinux() ? 'unix:///var/run/docker.sock' : 'http://localhost:2375'
     }
 }
 

@@ -1,10 +1,14 @@
 package org.openremote.controllercommand.resources;
 
 
+import flexjson.JSONDeserializer;
 import org.json.JSONObject;
 import org.openremote.controllercommand.ControllerProxyAndCommandServiceApplication;
 import org.openremote.controllercommand.domain.ControllerCommand;
+import org.openremote.controllercommand.domain.ControllerCommandDTO;
+import org.openremote.controllercommand.domain.ControllerCommandResponseDTO;
 import org.openremote.controllercommand.service.ControllerCommandService;
+import org.openremote.rest.GenericResourceResultWithErrorMessage;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -79,14 +83,18 @@ public class ControllerSessionHandler {
     }
 
 
-    public void handleMessage(String message, Session session) {
-        //TODO: handle message from controller ?
-        //remove message in db
-        //close command
+    public void handleMessage(String message) {
         EntityManager entityManager = controllerProxyAndCommandServiceApplication.createEntityManager();
-        Long id = Long.valueOf(message);
-        ControllerCommand controllerCommand = controllerCommandService.findControllerCommandById(entityManager, id);
-        controllerCommandService.closeControllerCommand(controllerCommand);
+        ControllerCommandResponseDTO res = new JSONDeserializer<ControllerCommandResponseDTO>()
+              .use(null, ControllerCommandResponseDTO.class)
+              .deserialize(message);
+
+        ControllerCommand controllerCommand = controllerCommandService.findControllerCommandById(entityManager, res.getOid());
+        if (res.getCommandTypeEnum().equals(ControllerCommandResponseDTO.Type.SUCCESS)) {
+            controllerCommandService.closeControllerCommand(controllerCommand);
+        } else {
+            controllerCommandService.markFailedControllerCommand(controllerCommand);
+        }
         try {
             controllerCommandService.update(entityManager, controllerCommand);
             controllerProxyAndCommandServiceApplication.commitEntityManager(entityManager);
