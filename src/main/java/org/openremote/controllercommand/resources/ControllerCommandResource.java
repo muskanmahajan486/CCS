@@ -24,6 +24,7 @@ import flexjson.JSONSerializer;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.openremote.beehive.EntityTransactionFilter;
+import org.openremote.controllercommand.WSException;
 import org.openremote.controllercommand.domain.*;
 import org.openremote.controllercommand.domain.ControllerCommandDTO.Type;
 import org.openremote.controllercommand.service.AccountService;
@@ -119,9 +120,11 @@ public class ControllerCommandResource {
                 controllerCommandService.save(getEntityManager(request), command);
 
                 GenericResourceResultWithErrorMessage result = new GenericResourceResultWithErrorMessage(null, command);
-                ControllerCommandDTO commandDTO = ControllerCommandService.getControllerCommandDTO(command);
-                GenericResourceResultWithErrorMessage resultForWS = new GenericResourceResultWithErrorMessage(null, commandDTO);
-                controllerSessionHandler.sendToController(user.getUsername(), new JSONObject(new JSONSerializer().exclude("*.class").deepSerialize(resultForWS)));
+                try {
+                    controllerSessionHandler.sendToController(user.getUsername(), command);
+                } catch (WSException e) {
+                    log.info("Error on sending WS command",e);
+                }
                 return Response.ok(new JSONSerializer().exclude("*.class").exclude("result.account").deepSerialize(result)).build();
             } catch (IllegalArgumentException e) {
                 throw new BadRequestException("Unknown command type");

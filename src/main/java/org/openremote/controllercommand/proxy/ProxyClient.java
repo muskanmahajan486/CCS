@@ -24,6 +24,7 @@ import flexjson.JSONSerializer;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.openremote.controllercommand.ControllerProxyAndCommandServiceApplication;
+import org.openremote.controllercommand.WSException;
 import org.openremote.controllercommand.domain.ControllerCommandDTO;
 import org.openremote.controllercommand.domain.InitiateProxyControllerCommand;
 import org.openremote.controllercommand.domain.User;
@@ -351,7 +352,11 @@ public class ProxyClient extends Proxy {
        ControllerCommandDTO commandDTO = ControllerCommandService.getControllerCommandDTO(command);
        GenericResourceResultWithErrorMessage resultForWS = new GenericResourceResultWithErrorMessage(null, commandDTO);
        try {
-          controllerSessionHandler.sendToController(user.getUsername(), new JSONObject(new JSONSerializer().exclude("*.class").deepSerialize(resultForWS)));
+          try {
+             controllerSessionHandler.sendToController(user.getUsername(), new JSONObject(new JSONSerializer().exclude("*.class").deepSerialize(resultForWS)));
+          } catch (WSException e) {
+             logger.info("Proxy command could not be send");
+          }
        } catch (JSONException e) {
           throw new RuntimeException(e);
        }

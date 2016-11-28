@@ -82,6 +82,11 @@ public class ControllerProxyAndCommandServiceApplication extends ResourceConfig
     Boolean useSSL = getBooleanConfiguration(config, "proxy.useSSL", true);
     String keystore = config.getProperty("proxy.keystore", "keystore.ks");
     String keystorePassword = config.getProperty("proxy.keystorePassword", "storepass");
+
+    //retrieve failled command thread
+    CommandRetriever cr = new CommandRetriever(this, controllerCommandService, controllerSessionHandler);
+    cr.start();
+
     ProxyServer ps = new ProxyServer(proxyHostname, proxyTimeout, proxyPort, proxyClientPortRange, useSSL, keystore, keystorePassword, controllerCommandService, accountService, this, controllerSessionHandler);
     ps.start();
 
