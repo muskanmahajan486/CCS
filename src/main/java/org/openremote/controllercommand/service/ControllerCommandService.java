@@ -37,6 +37,7 @@ import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -140,12 +141,14 @@ public class ControllerCommandService
   }
 
 
-
-   public List<ControllerCommand> findControllerCommandByStatus(EntityManager entityManager, State state) {
+   public List<ControllerCommand> findControllerCommandByStatus(EntityManager entityManager, State state, Long commandLiveTimeout) {
      CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
      CriteriaQuery<ControllerCommand> controllerCommandQuery = criteriaBuilder.createQuery(ControllerCommand.class);
      Root<ControllerCommand> controllerCommandRoot = controllerCommandQuery.from(ControllerCommand.class);
-     controllerCommandQuery.where(criteriaBuilder.equal(controllerCommandRoot.get("state"), state));
+     controllerCommandQuery.where(
+           criteriaBuilder.and(criteriaBuilder.equal(controllerCommandRoot.get("state"), state)),
+           criteriaBuilder.greaterThan(controllerCommandRoot.<Date>get("creationDate"),new Date(System.currentTimeMillis() - (commandLiveTimeout*1000)))
+           );
      return entityManager.createQuery(controllerCommandQuery).getResultList();
    }
 

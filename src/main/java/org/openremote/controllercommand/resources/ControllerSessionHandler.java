@@ -68,7 +68,8 @@ public class ControllerSessionHandler {
         String username = session.getUserPrincipal().getName();
         sessions.put(username, session);
         //retrieve openCommandForUser
-        List<ControllerCommand> openCommands = controllerCommandService.findControllerCommandByStatusAndUsername(controllerProxyAndCommandServiceApplication.createEntityManager(), ControllerCommand.State.OPEN, username);
+        EntityManager entityManager = controllerProxyAndCommandServiceApplication.createEntityManager();
+        List<ControllerCommand> openCommands = controllerCommandService.findControllerCommandByStatusAndUsername(entityManager, ControllerCommand.State.OPEN, username);
         for (ControllerCommand openCommand : openCommands) {
             try {
                 sendToController(username,openCommand);
@@ -76,6 +77,8 @@ public class ControllerSessionHandler {
                 log.info("Error trying to send OPEN Controller Command",e);
             }
         }
+        controllerProxyAndCommandServiceApplication.commitEntityManager(entityManager);
+
     }
 
     public void removeSession(Session session) {
@@ -133,7 +136,7 @@ public class ControllerSessionHandler {
         } catch (Exception ex) {
             controllerProxyAndCommandServiceApplication.rollbackEntityManager(entityManager);
         }
-
+        controllerProxyAndCommandServiceApplication.commitEntityManager(entityManager);
     }
 
 

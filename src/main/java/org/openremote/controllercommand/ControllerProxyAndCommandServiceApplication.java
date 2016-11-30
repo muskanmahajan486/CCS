@@ -82,9 +82,11 @@ public class ControllerProxyAndCommandServiceApplication extends ResourceConfig
     Boolean useSSL = getBooleanConfiguration(config, "proxy.useSSL", true);
     String keystore = config.getProperty("proxy.keystore", "keystore.ks");
     String keystorePassword = config.getProperty("proxy.keystorePassword", "storepass");
+    Long commandRetryTimeout = getLongConfiguration(config, "command.retry.timeout", 30000l);
+    Long commandLiveTimeout = getLongConfiguration(config, "command.live.timeout", 43200l);
 
     //retrieve failled command thread
-    CommandRetriever cr = new CommandRetriever(this, controllerCommandService, controllerSessionHandler);
+    CommandRetriever cr = new CommandRetriever(this, controllerCommandService, controllerSessionHandler,commandRetryTimeout,commandLiveTimeout);
     cr.start();
 
     ProxyServer ps = new ProxyServer(proxyHostname, proxyTimeout, proxyPort, proxyClientPortRange, useSSL, keystore, keystorePassword, controllerCommandService, accountService, this, controllerSessionHandler);
@@ -133,6 +135,20 @@ public class ControllerProxyAndCommandServiceApplication extends ResourceConfig
       integerValue = defaultValue;
     }
     return integerValue;
+  }
+
+  private Long getLongConfiguration(Properties config, String propertyName, Long defaultValue) {
+    String stringValue = config.getProperty(propertyName);
+    if (stringValue == null) {
+      return defaultValue;
+    }
+    Long longValue = null;
+    try {
+      longValue = Long.parseLong(stringValue);
+    } catch (NumberFormatException e) {
+      longValue = defaultValue;
+    }
+    return longValue;
   }
 
   private Boolean getBooleanConfiguration(Properties config, String propertyName, Boolean defaultValue) {

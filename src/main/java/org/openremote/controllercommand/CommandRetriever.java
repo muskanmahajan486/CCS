@@ -20,13 +20,17 @@ public class CommandRetriever extends Thread {
    private ControllerProxyAndCommandServiceApplication controllerProxyAndCommandServiceApplication;
    private ControllerCommandService controllerCommandService;
    private ControllerSessionHandler controllerSessionHandler;
+   private final Long commandRetryTimeout;
+   private final Long commandLiveTimeout;
 
    protected final static Logger log = LoggerFactory.getLogger(ControllerCommandResource.class);
 
-   public CommandRetriever(ControllerProxyAndCommandServiceApplication app, ControllerCommandService controllerCommandService, ControllerSessionHandler controllerSessionHandler) {
+   public CommandRetriever(ControllerProxyAndCommandServiceApplication app, ControllerCommandService controllerCommandService, ControllerSessionHandler controllerSessionHandler, Long commandRetryTimeout, Long commandLiveTimeout) {
       this.controllerProxyAndCommandServiceApplication = app;
       this.controllerCommandService = controllerCommandService;
       this.controllerSessionHandler = controllerSessionHandler;
+      this.commandRetryTimeout = commandRetryTimeout;
+      this.commandLiveTimeout = commandLiveTimeout;
    }
 
    @Override
@@ -34,7 +38,7 @@ public class CommandRetriever extends Thread {
       boolean interrupted = false;
       while (!interrupted) {
          EntityManager entityManager = controllerProxyAndCommandServiceApplication.createEntityManager();
-         List<ControllerCommand> controllerCommands = controllerCommandService.findControllerCommandByStatus(entityManager, ControllerCommand.State.FAILED);
+         List<ControllerCommand> controllerCommands = controllerCommandService.findControllerCommandByStatus(entityManager, ControllerCommand.State.FAILED, commandLiveTimeout);
          for (ControllerCommand command : controllerCommands) {
             for (User user : command.getAccount().getUsers()) {
                if (controllerSessionHandler.hasSession(user.getUsername())) {
@@ -46,9 +50,10 @@ public class CommandRetriever extends Thread {
                }
             }
          }
+         controllerProxyAndCommandServiceApplication.commitEntityManager(entityManager);
 
          try {
-            Thread.sleep(30000);
+            Thread.sleep(commandRetryTimeout);
          } catch (InterruptedException e) {
             interrupted = true;
          }
