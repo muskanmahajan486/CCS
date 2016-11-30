@@ -149,40 +149,21 @@ public class ControllerCommandService
      return entityManager.createQuery(controllerCommandQuery).getResultList();
    }
 
-  public List<ControllerCommand> findControllerCommandByStatusAndUsername(EntityManager entityManager, State open, String name) {
-  /*
+  public List<ControllerCommand> findControllerCommandByStatusAndUsername(EntityManager entityManager, State state, String username) {
+
     User u = genericDAO.getByNonIdField(entityManager, User.class, "username", username);
-
     CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
-    CriteriaQuery<Controller> controllerQuery = criteriaBuilder.createQuery(Controller.class);
-    Root<Controller> controllerRoot = controllerQuery.from(Controller.class);
-    Fetch<Controller, Account> accountJoin = controllerRoot.fetch("account");
-    accountJoin.fetch("users");
-    controllerQuery.select(controllerRoot);
-    controllerQuery.where(criteriaBuilder.equal(controllerRoot.get("oid"), oid));
-    Controller controller;
-    try {
-      controller = entityManager.createQuery(controllerQuery).getSingleResult();
-    } catch (NoResultException e) {
-      return Collections.emptyList();
-    }
-
-    // Only return commands if the user making the request has access to the account linked to the controller
-    if (!controller.getAccount().getUsers().contains(u)) {
-      return Collections.emptyList();
-    }
 
     CriteriaQuery<ControllerCommand> controllerCommandQuery = criteriaBuilder.createQuery(ControllerCommand.class);
     Root<ControllerCommand> controllerCommandRoot = controllerCommandQuery.from(ControllerCommand.class);
     controllerCommandQuery.select(controllerCommandRoot);
-    Predicate criteria = criteriaBuilder.equal(controllerCommandRoot.get("account"), controller.getAccount());
-    criteria = criteriaBuilder.and(criteria, criteriaBuilder.equal(controllerCommandRoot.get("state"), State.OPEN));
+    Predicate criteria = criteriaBuilder.equal(controllerCommandRoot.get("account"), u.getAccount());
+    criteria = criteriaBuilder.and(criteria, criteriaBuilder.equal(controllerCommandRoot.get("state"), state));
     controllerCommandQuery.where(criteria);
     controllerCommandQuery.orderBy(criteriaBuilder.asc(controllerCommandRoot.get("creationDate")));
 
     return entityManager.createQuery(controllerCommandQuery).getResultList();
-*/
-  return new ArrayList<>();
+
 
   }
 }
