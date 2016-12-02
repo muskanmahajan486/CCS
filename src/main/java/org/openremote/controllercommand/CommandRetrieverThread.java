@@ -1,21 +1,17 @@
 package org.openremote.controllercommand;
 
-import flexjson.JSONSerializer;
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.openremote.controllercommand.domain.ControllerCommand;
 import org.openremote.controllercommand.domain.User;
 import org.openremote.controllercommand.resources.ControllerCommandResource;
 import org.openremote.controllercommand.resources.ControllerSessionHandler;
 import org.openremote.controllercommand.service.ControllerCommandService;
-import org.openremote.rest.GenericResourceResultWithErrorMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.persistence.EntityManager;
 import java.util.List;
 
-public class CommandRetriever extends Thread {
+public class CommandRetrieverThread extends Thread {
 
    private ControllerProxyAndCommandServiceApplication controllerProxyAndCommandServiceApplication;
    private ControllerCommandService controllerCommandService;
@@ -25,7 +21,7 @@ public class CommandRetriever extends Thread {
 
    protected final static Logger log = LoggerFactory.getLogger(ControllerCommandResource.class);
 
-   public CommandRetriever(ControllerProxyAndCommandServiceApplication app, ControllerCommandService controllerCommandService, ControllerSessionHandler controllerSessionHandler, Long commandRetryTimeout, Long commandLiveTimeout) {
+   public CommandRetrieverThread(ControllerProxyAndCommandServiceApplication app, ControllerCommandService controllerCommandService, ControllerSessionHandler controllerSessionHandler, Long commandRetryTimeout, Long commandLiveTimeout) {
       this.controllerProxyAndCommandServiceApplication = app;
       this.controllerCommandService = controllerCommandService;
       this.controllerSessionHandler = controllerSessionHandler;

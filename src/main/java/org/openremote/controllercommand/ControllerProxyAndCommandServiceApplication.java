@@ -86,17 +86,13 @@ public class ControllerProxyAndCommandServiceApplication extends ResourceConfig
     Long commandLiveTimeout = getLongConfiguration(config, "command.live.timeout", 43200l);
 
     //retrieve failled command thread
-    CommandRetriever cr = new CommandRetriever(this, controllerCommandService, controllerSessionHandler,commandRetryTimeout,commandLiveTimeout);
+    CommandRetrieverThread cr = new CommandRetrieverThread(this, controllerCommandService, controllerSessionHandler,commandRetryTimeout,commandLiveTimeout);
     cr.start();
 
     ProxyServer ps = new ProxyServer(proxyHostname, proxyTimeout, proxyPort, proxyClientPortRange, useSSL, keystore, keystorePassword, controllerCommandService, accountService, this, controllerSessionHandler);
     ps.start();
-
-
-      //  serviceLocator =
-      //  MyService service = serviceLocator.createAndInitialize(ControllerSessionHandler.class);
-
     register(ControllerCommandResource.class);
+
     register(ControllerCommandsResource.class);
 
 
