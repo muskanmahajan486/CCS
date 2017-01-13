@@ -26,4 +26,10 @@ public class WebsocketControllerCommandsResource {
         ControllerSessionHandler.getInstance().handleMessage(message);
     }
 
+    @OnError
+    public void error(Session session, Throwable error) {
+        log.error("WS Error",error);
+        close(session);
+    }
+
 }
