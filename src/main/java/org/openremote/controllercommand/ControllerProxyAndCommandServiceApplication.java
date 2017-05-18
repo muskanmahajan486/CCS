@@ -73,7 +73,13 @@ public class ControllerProxyAndCommandServiceApplication extends ResourceConfig
 
     final ControllerSessionHandler controllerSessionHandler = ControllerSessionHandler.getInstance();
     controllerSessionHandler.setEntityFilter(this);
+
     controllerSessionHandler.setControllerCommandService(controllerCommandService);
+    controllerSessionHandler.setAccountService(accountService);
+    String baseUri = config.getProperty("wsHook.baseUri", "localhost:3000");
+    String openPath = config.getProperty("wsHook.openPath", "/open");
+    String closePath = config.getProperty("wsHook.closePath", "/close");
+    controllerSessionHandler.prepareConnectionNotification(baseUri, openPath, closePath);
 
     String proxyHostname = config.getProperty("proxy.hostname", "localhost");
     Integer proxyTimeout = getIntegerConfiguration(config, "proxy.timeout", 10000);
