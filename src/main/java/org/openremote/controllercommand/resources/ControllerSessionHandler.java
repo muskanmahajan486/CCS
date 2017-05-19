@@ -31,19 +31,21 @@ public class ControllerSessionHandler {
 
     private ControllerCommandService controllerCommandService;
 
-    private BlockingQueue<String> openConnectionQueue;
-    private BlockingQueue<String> closeConnectionQueue;
+    private BlockingQueue<Payload> openConnectionQueue;
+    private BlockingQueue<Payload> closeConnectionQueue;
 
     private ControllerProxyAndCommandServiceApplication controllerProxyAndCommandServiceApplication;
 
     protected final static org.slf4j.Logger log = LoggerFactory.getLogger(ControllerSessionHandler.class);
     private AccountService accountService;
+    private String ccsIp;
 
     private ControllerSessionHandler() {
 
     }
 
-    public void prepareConnectionNotification(String baseUri, String openPath, String closePath) {
+    public void prepareConnectionNotification(String baseUri, String openPath, String closePath, String ccsIp) {
+        this.ccsIp = ccsIp;
         openConnectionQueue = new ArrayBlockingQueue<>(1000);
         closeConnectionQueue = new ArrayBlockingQueue<>(1000);
         ConnectionHookConsumer openConsumer = new ConnectionHookConsumer(openConnectionQueue, baseUri, openPath);
@@ -86,17 +88,12 @@ public class ControllerSessionHandler {
     private final Map<String, Session> sessions = new HashMap<>();
 
     public void addSession(Session session) {
-        String username = session.getUserPrincipal().getName();
 
+        String username = session.getUserPrincipal().getName();
+        notifyOpenConnection(username);
         sessions.put(username, session);
         //retrieve openCommandForUser
         EntityManager entityManager = controllerProxyAndCommandServiceApplication.createEntityManager();
-
-        try {
-            openConnectionQueue.put(username);
-        } catch (InterruptedException e) {
-            log.error("inQueue interupted", e);
-        }
 
         List<ControllerCommand> openCommands = controllerCommandService.findControllerCommandByStatusAndUsername(entityManager, ControllerCommand.State.OPEN, username);
         for (ControllerCommand openCommand : openCommands) {
@@ -110,26 +107,42 @@ public class ControllerSessionHandler {
 
     }
 
-    private void notifyOpenConnection(User user) {
-        log.info("Send OpenConnection");
+    private void notifyOpenConnection(String user) {
+        try {
+            openConnectionQueue.put(getPayload(user));
+        } catch (InterruptedException e) {
+            log.error("inQueue interupted", e);
+        }
     }
 
-    private void notifyCloseConnection(User user) {
-        log.info("Send CloseConnection");
-    }
-
-
-    public void removeSession(Session session) {
-        if (!openConnectionQueue.remove(session.getUserPrincipal().getName())) {
+    private void notifyCloseConnection(String user) {
+        Payload payload = getPayload(user);
+        if (!openConnectionQueue.remove(payload)) {
             try {
-                closeConnectionQueue.put(session.getUserPrincipal().getName());
+                closeConnectionQueue.put(payload);
             } catch (InterruptedException e) {
                 log.error("closeQueue interupted", e);
             }
         }
+    }
+
+
+    public void removeSession(Session session) {
+        notifyCloseConnection(session.getUserPrincipal().getName());
         sessions.remove(session.getUserPrincipal().getName());
+    }
 
-
+    private Payload getPayload(String username) {
+        EntityManager entityManager = controllerProxyAndCommandServiceApplication.createEntityManager();
+        User user = accountService.loadByUsername(entityManager, username);
+        long controllerId = 0;
+        if (user != null && user.getAccount() != null
+                && user.getAccount().getControllers() != null
+                && user.getAccount().getControllers().get(0) != null) {
+            controllerId = user.getAccount().getControllers().get(0).getOid();
+        }
+        Payload payload = new Payload( username,controllerId,ccsIp);
+        return payload;
     }
 
     public void sendToController(String username, ControllerCommand command) throws WSException {
