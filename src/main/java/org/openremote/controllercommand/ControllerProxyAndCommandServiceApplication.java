@@ -26,6 +26,7 @@ import org.openremote.controllercommand.proxy.ProxyServer;
 import org.openremote.controllercommand.resources.ControllerCommandResource;
 import org.openremote.controllercommand.resources.ControllerCommandsResource;
 import org.openremote.controllercommand.resources.ControllerSessionHandler;
+import org.openremote.controllercommand.resources.ControllersResource;
 import org.openremote.controllercommand.service.AccountService;
 import org.openremote.controllercommand.service.ControllerCommandService;
 import org.slf4j.Logger;
@@ -48,6 +49,7 @@ public class ControllerProxyAndCommandServiceApplication extends ResourceConfig
   static private EntityManagerFactory entityManagerFactory;
 
   protected final static Logger persistenceLog = LoggerFactory.getLogger(ControllerProxyAndCommandServiceApplication.class);
+  private final ControllerSessionHandler controllerSessionHandler;
 
   public ControllerProxyAndCommandServiceApplication()
   {
@@ -71,7 +73,7 @@ public class ControllerProxyAndCommandServiceApplication extends ResourceConfig
     final ControllerCommandService controllerCommandService = new ControllerCommandService();
     controllerCommandService.setGenericDAO(genericDAO);
 
-    final ControllerSessionHandler controllerSessionHandler = ControllerSessionHandler.getInstance();
+    controllerSessionHandler = ControllerSessionHandler.getInstance();
     controllerSessionHandler.setEntityFilter(this);
 
     controllerSessionHandler.setControllerCommandService(controllerCommandService);
@@ -101,6 +103,7 @@ public class ControllerProxyAndCommandServiceApplication extends ResourceConfig
     register(ControllerCommandResource.class);
 
     register(ControllerCommandsResource.class);
+    register(ControllersResource.class);
 
 
     register(new org.glassfish.hk2.utilities.binding.AbstractBinder()
@@ -119,6 +122,7 @@ public class ControllerProxyAndCommandServiceApplication extends ResourceConfig
     @PreDestroy
   private void testDestroy() {
     try {
+      controllerSessionHandler.shutdown();
       entityManagerFactory.close();
       persistenceLog.info("EntityManagerFactory has been closed");
     } catch (Exception e) {

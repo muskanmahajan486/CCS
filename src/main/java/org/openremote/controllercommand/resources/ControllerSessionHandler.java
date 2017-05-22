@@ -9,7 +9,6 @@ import org.openremote.controllercommand.ControllerProxyAndCommandServiceApplicat
 import org.openremote.controllercommand.WSException;
 import org.openremote.controllercommand.domain.ControllerCommand;
 import org.openremote.controllercommand.domain.ControllerCommandResponseDTO;
-import org.openremote.controllercommand.domain.User;
 import org.openremote.controllercommand.service.AccountService;
 import org.openremote.controllercommand.service.ControllerCommandService;
 import org.openremote.rest.GenericResourceResultWithErrorMessage;
@@ -20,39 +19,41 @@ import javax.persistence.EntityManager;
 import javax.websocket.Session;
 import java.io.IOException;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
 
 @ApplicationScoped
 public class ControllerSessionHandler {
 
     private ControllerCommandService controllerCommandService;
 
-    private BlockingQueue<Payload> openConnectionQueue;
-    private BlockingQueue<Payload> closeConnectionQueue;
+    private BlockingQueue<String> stateNotificationQueue;
 
     private ControllerProxyAndCommandServiceApplication controllerProxyAndCommandServiceApplication;
 
     protected final static org.slf4j.Logger log = LoggerFactory.getLogger(ControllerSessionHandler.class);
     private AccountService accountService;
-    private String ccsIp;
+
+    private volatile boolean shutdownInProgress = false;
 
     private ControllerSessionHandler() {
 
     }
 
     public void prepareConnectionNotification(String baseUri, String openPath, String closePath, String ccsIp) {
-        this.ccsIp = ccsIp;
-        openConnectionQueue = new ArrayBlockingQueue<>(1000);
-        closeConnectionQueue = new ArrayBlockingQueue<>(1000);
-        ConnectionHookConsumer openConsumer = new ConnectionHookConsumer(openConnectionQueue, baseUri, openPath);
-        ConnectionHookConsumer closeConsumer = new ConnectionHookConsumer(closeConnectionQueue, baseUri, closePath);
-
-        new Thread(openConsumer).start();
-        new Thread(closeConsumer).start();
+        stateNotificationQueue = new ArrayBlockingQueue<>(1000); //TODO check sizing for real usecase
+        ConnectionHookConsumer stateConsumer = new ConnectionHookConsumer(stateNotificationQueue, baseUri, openPath, closePath, controllerProxyAndCommandServiceApplication, accountService, ccsIp, sessions, new ShudownAware() {
+            @Override
+            public boolean isShutdownInProgress() {
+                return shutdownInProgress;
+            }
+        });
+        Thread thread = new Thread(stateConsumer);
+        thread.setDaemon(true);
+        thread.start();
     }
 
 
@@ -76,6 +77,14 @@ public class ControllerSessionHandler {
         return this.sessions.containsKey(username);
     }
 
+    public void shutdown() {
+        shutdownInProgress = true;
+    }
+
+    public String getAllConnected() {
+        return "Hahahahaaha";
+    }
+
 
     private static class SingletonHolder {
         private final static ControllerSessionHandler instance = new ControllerSessionHandler();
@@ -85,13 +94,13 @@ public class ControllerSessionHandler {
         return SingletonHolder.instance;
     }
 
-    private final Map<String, Session> sessions = new HashMap<>();
+    private final Map<String, Session> sessions = new ConcurrentHashMap<>();
 
     public void addSession(Session session) {
 
         String username = session.getUserPrincipal().getName();
-        notifyOpenConnection(username);
         sessions.put(username, session);
+        notifyConnection(username);
         //retrieve openCommandForUser
         EntityManager entityManager = controllerProxyAndCommandServiceApplication.createEntityManager();
 
@@ -107,42 +116,18 @@ public class ControllerSessionHandler {
 
     }
 
-    private void notifyOpenConnection(String user) {
+    private void notifyConnection(String user) {
         try {
-            openConnectionQueue.put(getPayload(user));
+            stateNotificationQueue.put(user);
         } catch (InterruptedException e) {
             log.error("inQueue interupted", e);
         }
     }
 
-    private void notifyCloseConnection(String user) {
-        Payload payload = getPayload(user);
-        if (!openConnectionQueue.remove(payload)) {
-            try {
-                closeConnectionQueue.put(payload);
-            } catch (InterruptedException e) {
-                log.error("closeQueue interupted", e);
-            }
-        }
-    }
-
 
     public void removeSession(Session session) {
-        notifyCloseConnection(session.getUserPrincipal().getName());
         sessions.remove(session.getUserPrincipal().getName());
-    }
-
-    private Payload getPayload(String username) {
-        EntityManager entityManager = controllerProxyAndCommandServiceApplication.createEntityManager();
-        User user = accountService.loadByUsername(entityManager, username);
-        long controllerId = 0;
-        if (user != null && user.getAccount() != null
-                && user.getAccount().getControllers() != null
-                && user.getAccount().getControllers().get(0) != null) {
-            controllerId = user.getAccount().getControllers().get(0).getOid();
-        }
-        Payload payload = new Payload( username,controllerId,ccsIp);
-        return payload;
+        notifyConnection(session.getUserPrincipal().getName());
     }
 
     public void sendToController(String username, ControllerCommand command) throws WSException {
@@ -199,5 +184,8 @@ public class ControllerSessionHandler {
         controllerProxyAndCommandServiceApplication.commitEntityManager(entityManager);
     }
 
+    public interface ShudownAware {
+       boolean isShutdownInProgress();
+    }
 
 }
