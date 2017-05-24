@@ -21,7 +21,7 @@
 package org.openremote.controllercommand.resources;
 
 
-public class Payload{
+public class Payload {
 
     private Long controllerId;
     private String ccsIp;
@@ -55,5 +55,20 @@ public class Payload{
 
     public void setUsername(String username) {
         this.username = username;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Payload payload = (Payload) o;
+
+        return username.equals(payload.username);
+    }
+
+    @Override
+    public int hashCode() {
+        return username.hashCode();
     }
 }

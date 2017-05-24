@@ -21,12 +21,8 @@
 package org.openremote.controllercommand.resources;
 
 import org.openremote.controllercommand.ControllerProxyAndCommandServiceApplication;
-import org.openremote.controllercommand.domain.User;
-import org.openremote.controllercommand.service.AccountService;
 import org.slf4j.LoggerFactory;
 
-import javax.persistence.EntityManager;
-import javax.websocket.Session;
 import javax.ws.rs.ProcessingException;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.client.Client;
@@ -35,10 +31,7 @@ import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.Response;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 
 public class ConnectionHookConsumer implements Runnable {
 
@@ -49,21 +42,16 @@ public class ConnectionHookConsumer implements Runnable {
     private final String baseUri;
     private final String openPath;
     private final String closePath;
-    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
     private final ControllerProxyAndCommandServiceApplication controllerProxyAndCommandServiceApplication;
-    private final AccountService accountService;
-    private final String ccsIp;
-    private final Map sessions;
+    private final Map<String,Payload> sessions;
     private final ControllerSessionHandler.ShudownAware isShutdown;
 
-    public ConnectionHookConsumer(BlockingQueue<String> queue, String baseUri, String openPath, String closePath, ControllerProxyAndCommandServiceApplication controllerProxyAndCommandServiceApplication, AccountService accountService, String ccsIp, Map sessions, ControllerSessionHandler.ShudownAware isShutdown) {
+    public ConnectionHookConsumer(BlockingQueue<String> queue, String baseUri, String openPath, String closePath, ControllerProxyAndCommandServiceApplication controllerProxyAndCommandServiceApplication, Map<String,Payload> sessions, ControllerSessionHandler.ShudownAware isShutdown) {
         this.queue = queue;
         this.baseUri = baseUri;
         this.openPath = openPath;
         this.closePath = closePath;
         this.controllerProxyAndCommandServiceApplication = controllerProxyAndCommandServiceApplication;
-        this.accountService = accountService;
-        this.ccsIp = ccsIp;
         this.sessions = sessions;
         this.isShutdown = isShutdown;
         this.client = ClientBuilder.newClient();
@@ -83,7 +71,7 @@ public class ConnectionHookConsumer implements Runnable {
                         Response response = client.target(baseUri)
                                 .path(path)
                                 .request()
-                                .post(Entity.json(getPayload(user)));
+                                .post(Entity.json(sessions.get(user)));
                         log.info("Notify response code : " + response.getStatus());
                         if (response.getStatus() >= 400 && response.getStatus() != 503 ) {
                             //todo log fatal
@@ -110,17 +98,5 @@ public class ConnectionHookConsumer implements Runnable {
         Thread.sleep(3000); // todo params
     }
 
-    private Payload getPayload(String username) {
-        EntityManager entityManager = controllerProxyAndCommandServiceApplication.createEntityManager();
-        User user = accountService.loadByUsername(entityManager, username);
-        long controllerId = 0;
-        if (user != null && user.getAccount() != null
-                && user.getAccount().getControllers() != null
-                && user.getAccount().getControllers().get(0) != null) {
-            controllerId = user.getAccount().getControllers().get(0).getOid();
-        }
-        return new Payload(username, controllerId, ccsIp);
-
-    }
 
 }

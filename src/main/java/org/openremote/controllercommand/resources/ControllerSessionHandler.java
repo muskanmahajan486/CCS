@@ -9,6 +9,7 @@ import org.openremote.controllercommand.ControllerProxyAndCommandServiceApplicat
 import org.openremote.controllercommand.WSException;
 import org.openremote.controllercommand.domain.ControllerCommand;
 import org.openremote.controllercommand.domain.ControllerCommandResponseDTO;
+import org.openremote.controllercommand.domain.User;
 import org.openremote.controllercommand.service.AccountService;
 import org.openremote.controllercommand.service.ControllerCommandService;
 import org.openremote.rest.GenericResourceResultWithErrorMessage;
@@ -28,24 +29,28 @@ import java.util.concurrent.ConcurrentHashMap;
 @ApplicationScoped
 public class ControllerSessionHandler {
 
+    protected final static org.slf4j.Logger log = LoggerFactory.getLogger(ControllerSessionHandler.class);
+
     private ControllerCommandService controllerCommandService;
 
     private BlockingQueue<String> stateNotificationQueue;
 
     private ControllerProxyAndCommandServiceApplication controllerProxyAndCommandServiceApplication;
-
-    protected final static org.slf4j.Logger log = LoggerFactory.getLogger(ControllerSessionHandler.class);
     private AccountService accountService;
 
     private volatile boolean shutdownInProgress = false;
 
+    private final Map<String, Session> sessions = new ConcurrentHashMap<>();
+    private final Map<String, Payload> connectedControllerByUser = new ConcurrentHashMap<>();
+    private String ccsIp;
     private ControllerSessionHandler() {
 
     }
 
     public void prepareConnectionNotification(String baseUri, String openPath, String closePath, String ccsIp) {
+        this.ccsIp = ccsIp;
         stateNotificationQueue = new ArrayBlockingQueue<>(1000); //TODO check sizing for real usecase
-        ConnectionHookConsumer stateConsumer = new ConnectionHookConsumer(stateNotificationQueue, baseUri, openPath, closePath, controllerProxyAndCommandServiceApplication, accountService, ccsIp, sessions, new ShudownAware() {
+        ConnectionHookConsumer stateConsumer = new ConnectionHookConsumer(stateNotificationQueue, baseUri, openPath, closePath, controllerProxyAndCommandServiceApplication,  connectedControllerByUser, new ShudownAware() {
             @Override
             public boolean isShutdownInProgress() {
                 return shutdownInProgress;
@@ -81,10 +86,9 @@ public class ControllerSessionHandler {
         shutdownInProgress = true;
     }
 
-    public String getAllConnected() {
-        return "Hahahahaaha";
+    public Map<String, Payload> getAllConnected() {
+        return connectedControllerByUser;
     }
-
 
     private static class SingletonHolder {
         private final static ControllerSessionHandler instance = new ControllerSessionHandler();
@@ -94,15 +98,17 @@ public class ControllerSessionHandler {
         return SingletonHolder.instance;
     }
 
-    private final Map<String, Session> sessions = new ConcurrentHashMap<>();
 
     public void addSession(Session session) {
 
         String username = session.getUserPrincipal().getName();
+        /*retrieve openCommandForUser*/
         sessions.put(username, session);
-        notifyConnection(username);
-        //retrieve openCommandForUser
         EntityManager entityManager = controllerProxyAndCommandServiceApplication.createEntityManager();
+
+        Payload payload = getPayload(username, accountService.loadByUsername(entityManager, username));
+        connectedControllerByUser.put(username,payload);
+        notifyConnection(username);
 
         List<ControllerCommand> openCommands = controllerCommandService.findControllerCommandByStatusAndUsername(entityManager, ControllerCommand.State.OPEN, username);
         for (ControllerCommand openCommand : openCommands) {
@@ -127,6 +133,7 @@ public class ControllerSessionHandler {
 
     public void removeSession(Session session) {
         sessions.remove(session.getUserPrincipal().getName());
+        connectedControllerByUser.remove(session.getUserPrincipal().getName());
         notifyConnection(session.getUserPrincipal().getName());
     }
 
@@ -187,5 +194,16 @@ public class ControllerSessionHandler {
     public interface ShudownAware {
        boolean isShutdownInProgress();
     }
+
+    private Payload getPayload(String username, User user) {
+        long controllerId = 0;
+        if (user != null && user.getAccount() != null
+                && user.getAccount().getControllers() != null
+                && user.getAccount().getControllers().get(0) != null) {
+            controllerId = user.getAccount().getControllers().get(0).getOid();
+        }
+        return new Payload(username, controllerId, ccsIp);
+    }
+
 
 }
