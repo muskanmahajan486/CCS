@@ -59,8 +59,7 @@ public class ControllerProxyAndCommandServiceApplication extends ResourceConfig
       config.load(getClassLoader().getResourceAsStream("config.properties"));
     } catch (IOException e)
     {
-      // TODO: log
-      e.printStackTrace();
+      persistenceLog.error("Error loading config",e);
     }
 
     entityManagerFactory = Persistence.createEntityManagerFactory(config.getProperty("persistenceUnitName", "CCS-MySQL"));
@@ -82,7 +81,9 @@ public class ControllerProxyAndCommandServiceApplication extends ResourceConfig
     String openPath = config.getProperty("wsHook.openPath", "/open");
     String closePath = config.getProperty("wsHook.closePath", "/close");
     String ip = config.getProperty("ccs.ip", "127.0.0.1");
-    controllerSessionHandler.prepareConnectionNotification(baseUri, openPath, closePath, ip);
+    long retryTimeout = getIntegerConfiguration(config,"wsHook.retryTimeout", 30000);
+
+    controllerSessionHandler.prepareConnectionNotification(baseUri, openPath, closePath, ip, retryTimeout);
 
     String proxyHostname = config.getProperty("proxy.hostname", "localhost");
     Integer proxyTimeout = getIntegerConfiguration(config, "proxy.timeout", 10000);

@@ -1,0 +1,53 @@
+Implementation of action in case of open/close of the websocket channel
+=======================================================================
+
+call remote endpoint in case of open or close connection on the websocket.
+
+the call is made on a second thread to avoid blocking/change current websocket behaviour.
+in case of io error (like network) the thread will sleep {wsHook.retryTimeout} milliseconds.
+There is no retry count
+
+Http status error >= 400 & != 503 are considered as fatal and will be only log without reprocessing.
+
+
+new GET endpoint on CCS to retrive USER/CONTROLLER connected to the CCS
+
+list all connected
+{CCS_BASE_URI}/ccs/rest/controllers
+
+check status by controller oid
+{CCS_BASE_URI}/ccs/rest/controllers/{controlerOid}
+
+check status by username
+{CCS_BASE_URI}/ccs/rest/controllers/?username={username}
+
+
+Response expected :
+
+{
+  "errorMessage": null,
+  "result": [
+    {
+      "ccsIp": "172.17.0.3",
+      "controllerId": 1,
+      "username": "user"
+    }
+  ]
+}
+
+new parameters :
+
+#BASE URI of endpoint called by CCS
+wsHook.baseUri=http://172.17.0.1:3000
+
+#suffix of the URI in case of opened websocket
+wsHook.openPath=/open
+
+#suffix of the URI in case of closed websocket
+wsHook.closePath=/close
+
+#timeout between 2 retry calling the endpoint
+wsHook.retryTimeout=30000
+
+#CCS IP pass as data to the endpoint
+ccs.ip=172.17.0.3

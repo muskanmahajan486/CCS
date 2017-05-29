@@ -47,7 +47,7 @@ public class ControllerSessionHandler {
 
     }
 
-    public void prepareConnectionNotification(String baseUri, String openPath, String closePath, String ccsIp) {
+    public void prepareConnectionNotification(String baseUri, String openPath, String closePath, String ccsIp, long retryTimeout) {
         this.ccsIp = ccsIp;
         stateNotificationQueue = new ArrayBlockingQueue<>(1000); //TODO check sizing for real usecase
         ConnectionHookConsumer stateConsumer = new ConnectionHookConsumer(stateNotificationQueue, baseUri, openPath, closePath, controllerProxyAndCommandServiceApplication,  connectedControllerByUser, new ShudownAware() {
@@ -55,7 +55,7 @@ public class ControllerSessionHandler {
             public boolean isShutdownInProgress() {
                 return shutdownInProgress;
             }
-        });
+        }, retryTimeout);
         Thread thread = new Thread(stateConsumer);
         thread.setDaemon(true);
         thread.start();

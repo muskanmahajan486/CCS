@@ -38,15 +38,17 @@ public class ConnectionHookConsumer implements Runnable {
     private final BlockingQueue<String> queue;
 
     protected final static org.slf4j.Logger log = LoggerFactory.getLogger(ConnectionHookConsumer.class);
+
     private final Client client;
     private final String baseUri;
     private final String openPath;
     private final String closePath;
     private final ControllerProxyAndCommandServiceApplication controllerProxyAndCommandServiceApplication;
-    private final Map<String,Payload> sessions;
+    private final Map<String, Payload> sessions;
     private final ControllerSessionHandler.ShudownAware isShutdown;
+    private final long retryTimeout;
 
-    public ConnectionHookConsumer(BlockingQueue<String> queue, String baseUri, String openPath, String closePath, ControllerProxyAndCommandServiceApplication controllerProxyAndCommandServiceApplication, Map<String,Payload> sessions, ControllerSessionHandler.ShudownAware isShutdown) {
+    public ConnectionHookConsumer(BlockingQueue<String> queue, String baseUri, String openPath, String closePath, ControllerProxyAndCommandServiceApplication controllerProxyAndCommandServiceApplication, Map<String, Payload> sessions, ControllerSessionHandler.ShudownAware isShutdown, long retryTimeout) {
         this.queue = queue;
         this.baseUri = baseUri;
         this.openPath = openPath;
@@ -54,9 +56,9 @@ public class ConnectionHookConsumer implements Runnable {
         this.controllerProxyAndCommandServiceApplication = controllerProxyAndCommandServiceApplication;
         this.sessions = sessions;
         this.isShutdown = isShutdown;
+        this.retryTimeout = retryTimeout;
         this.client = ClientBuilder.newClient();
     }
-
 
 
     @Override
@@ -72,15 +74,13 @@ public class ConnectionHookConsumer implements Runnable {
                                 .path(path)
                                 .request()
                                 .post(Entity.json(sessions.get(user)));
-                        log.info("Notify response code : " + response.getStatus());
-                        if (response.getStatus() >= 400 && response.getStatus() != 503 ) {
-                            //todo log fatal
-                        } else if (response.getStatus() != 200) {
-                            //todo log info
-                            processServerError(user, response.getStatus(), null);
-                            queue.put(user);
-                          }
-                        //todo check response status code
+                        int status = response.getStatus();
+                        if (status >= 400 && status != 503) {
+                            log.error("WS notification get fatal response code :" + status);
+                        } else if (status != 200) {
+                            processServerError(user, status, null);
+                        }
+
                     } catch (ProcessingException | WebApplicationException ex) {
                         processServerError(user, null, ex);
                     }
@@ -93,9 +93,14 @@ public class ConnectionHookConsumer implements Runnable {
     }
 
     private void processServerError(String user, Integer status, RuntimeException ex) throws InterruptedException {
-    //todo log
+        if (status != null) {
+            log.info("WS notification get wrong response code : " + status + " retry in " + retryTimeout + " ms");
+        }
+        if (ex != null) {
+            log.info("WS notification get exception:", ex);
+        }
         queue.put(user);
-        Thread.sleep(3000); // todo params
+        Thread.sleep(retryTimeout);
     }
 
 
