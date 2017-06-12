@@ -20,13 +20,8 @@
 package org.openremote.controllercommand.service;
 
 import org.openremote.controllercommand.GenericDAO;
-import org.openremote.controllercommand.domain.Account;
-import org.openremote.controllercommand.domain.Controller;
-import org.openremote.controllercommand.domain.ControllerCommand;
+import org.openremote.controllercommand.domain.*;
 import org.openremote.controllercommand.domain.ControllerCommand.State;
-import org.openremote.controllercommand.domain.ControllerCommandDTO;
-import org.openremote.controllercommand.domain.InitiateProxyControllerCommand;
-import org.openremote.controllercommand.domain.User;
 
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
@@ -109,6 +104,10 @@ public class ControllerCommandService
     if (cmd instanceof InitiateProxyControllerCommand) {
       dto.addParameter("token", ((InitiateProxyControllerCommand)cmd).getToken());
       dto.addParameter("url", ((InitiateProxyControllerCommand)cmd).getUrl());
+    } else if (cmd instanceof ExecuteDeviceControllerCommand) {
+      dto.addParameter("deviceName", ((ExecuteDeviceControllerCommand)cmd).getDeviceName());
+      dto.addParameter("commandName", ((ExecuteDeviceControllerCommand)cmd).getCommandName());
+      dto.addParameter("parameter", ((ExecuteDeviceControllerCommand)cmd).getParameter());
     }
     return dto;
   }

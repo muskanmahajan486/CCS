@@ -36,3 +36,16 @@ CREATE TABLE IF NOT EXISTS `initiate_proxy_controller_command` (
     REFERENCES `controller_command` (`oid`))
 ENGINE = InnoDB
 DEFAULT CHARACTER SET = utf8;
+
+CREATE TABLE IF NOT EXISTS `execute_device_controller_command` (
+   `oid` BIGINT(20) NOT NULL,
+   `deviceName` VARCHAR(255) NULL DEFAULT NULL,
+   `commandName` VARCHAR(255) NULL DEFAULT NULL,
+   `parameter` VARCHAR(4000) NULL DEFAULT NULL,
+     PRIMARY KEY (`oid`) ,
+  INDEX `IDX__EXECUTE_DEVICE_CONTROLLER_COMMAND__OID` (`oid` ASC) ,
+  CONSTRAINT `FK__EXECUTE_DEVICE_CONTROLLER_COMMAND__CONTROLLER_COMMAND__OID`
+    FOREIGN KEY (`oid`)
+    REFERENCES `controller_command` (`oid`))
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = utf8;

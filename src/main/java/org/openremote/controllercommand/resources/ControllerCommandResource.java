@@ -113,17 +113,26 @@ public class ControllerCommandResource {
             }
             try {
                 ControllerCommandDTO.Type type = Type.valueOf(typeAsString.trim().toUpperCase());
-                if (Type.DOWNLOAD_DESIGN != type) {
+                if (Type.DOWNLOAD_DESIGN != type && Type.EXECUTE_DEVICE_COMMAND != type) {
                     throw new BadRequestException("Unsupported command type");
                 }
-                ControllerCommand command = new ControllerCommand(account, Type.DOWNLOAD_DESIGN);
+                ControllerCommand command;
+                if (Type.EXECUTE_DEVICE_COMMAND == type) {
+                    String deviceName = jsonData.getString("deviceName");
+                    String commandName = jsonData.getString("commandName");
+                    String parameter = jsonData.getString("parameter");
+                    command = new ExecuteDeviceControllerCommand(account, type, deviceName, commandName, parameter);
+                } else {
+                    command = new ControllerCommand(account, type);
+
+                }
                 controllerCommandService.save(getEntityManager(request), command);
 
                 GenericResourceResultWithErrorMessage result = new GenericResourceResultWithErrorMessage(null, command);
                 try {
                     controllerSessionHandler.sendToController(user.getUsername(), command);
                 } catch (WSException e) {
-                    log.info("Error on sending WS command",e);
+                    log.info("Error on sending WS command", e);
                 }
                 return Response.ok(new JSONSerializer().exclude("*.class").exclude("result.account").deepSerialize(result)).build();
             } catch (IllegalArgumentException e) {

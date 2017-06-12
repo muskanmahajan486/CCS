@@ -25,7 +25,7 @@ repositories {
 }
 
 dependencies {
-    compile "org.openremote:or-commons:0.2.0"
+    compile "org.openremote:or-commons:0.3.0"
     compile "org.openremote:or-object-model:0.2.1"
 
     compile "org.json:json:20090211"
