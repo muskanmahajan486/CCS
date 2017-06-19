@@ -80,10 +80,11 @@ public class ControllerProxyAndCommandServiceApplication extends ResourceConfig
     String baseUri = config.getProperty("wsHook.baseUri", "localhost:3000");
     String openPath = config.getProperty("wsHook.openPath", "/open");
     String closePath = config.getProperty("wsHook.closePath", "/close");
+    String executeCommandResponsePath = config.getProperty("wsHook.executeCommandResponsePath", "/executeCommandResponse");
     String ip = config.getProperty("ccs.ip", "127.0.0.1");
     long retryTimeout = getIntegerConfiguration(config,"wsHook.retryTimeout", 30000);
 
-    controllerSessionHandler.prepareConnectionNotification(baseUri, openPath, closePath, ip, retryTimeout);
+    controllerSessionHandler.prepareConnectionNotification(baseUri,executeCommandResponsePath, openPath, closePath, ip, retryTimeout);
 
     String proxyHostname = config.getProperty("proxy.hostname", "localhost");
     Integer proxyTimeout = getIntegerConfiguration(config, "proxy.timeout", 10000);

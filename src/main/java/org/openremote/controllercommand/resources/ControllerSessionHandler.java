@@ -8,6 +8,7 @@ import org.json.JSONObject;
 import org.openremote.controllercommand.ControllerProxyAndCommandServiceApplication;
 import org.openremote.controllercommand.WSException;
 import org.openremote.controllercommand.domain.ControllerCommand;
+import org.openremote.controllercommand.domain.ControllerCommandDTO;
 import org.openremote.controllercommand.domain.ControllerCommandResponseDTO;
 import org.openremote.controllercommand.domain.User;
 import org.openremote.controllercommand.service.AccountService;
@@ -18,6 +19,10 @@ import org.slf4j.LoggerFactory;
 import javax.enterprise.context.ApplicationScoped;
 import javax.persistence.EntityManager;
 import javax.websocket.Session;
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.client.Entity;
+import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
@@ -42,15 +47,21 @@ public class ControllerSessionHandler {
 
     private final Map<String, Session> sessions = new ConcurrentHashMap<>();
     private final Map<String, Payload> connectedControllerByUser = new ConcurrentHashMap<>();
+    private final Client client = ClientBuilder.newClient();
     private String ccsIp;
+    private String exectuteCommandResponsePath;
+    private String baseUri;
+
     private ControllerSessionHandler() {
 
     }
 
-    public void prepareConnectionNotification(String baseUri, String openPath, String closePath, String ccsIp, long retryTimeout) {
+    public void prepareConnectionNotification(String baseUri,String executeCommandResponsePath, String openPath, String closePath, String ccsIp, long retryTimeout) {
         this.ccsIp = ccsIp;
+        this.baseUri = baseUri;
+        this.exectuteCommandResponsePath = executeCommandResponsePath;
         stateNotificationQueue = new ArrayBlockingQueue<>(1000); //TODO check sizing for real usecase
-        ConnectionHookConsumer stateConsumer = new ConnectionHookConsumer(stateNotificationQueue, baseUri, openPath, closePath, controllerProxyAndCommandServiceApplication,  connectedControllerByUser, new ShudownAware() {
+        ConnectionHookConsumer stateConsumer = new ConnectionHookConsumer(stateNotificationQueue, baseUri, openPath, closePath, controllerProxyAndCommandServiceApplication, connectedControllerByUser, sessions, new ShudownAware() {
             @Override
             public boolean isShutdownInProgress() {
                 return shutdownInProgress;
@@ -133,7 +144,6 @@ public class ControllerSessionHandler {
 
     public void removeSession(Session session) {
         sessions.remove(session.getUserPrincipal().getName());
-        connectedControllerByUser.remove(session.getUserPrincipal().getName());
         notifyConnection(session.getUserPrincipal().getName());
     }
 
@@ -189,6 +199,18 @@ public class ControllerSessionHandler {
             controllerProxyAndCommandServiceApplication.rollbackEntityManager(entityManager);
         }
         controllerProxyAndCommandServiceApplication.commitEntityManager(entityManager);
+
+        if (controllerCommand.getType() == ControllerCommandDTO.Type.EXECUTE_DEVICE_COMMAND) {
+            //send rest to hms
+            try {
+                Response response = client.target(baseUri)
+                        .path(exectuteCommandResponsePath)
+                        .request()
+                        .post(Entity.json(controllerCommand));
+            } catch (Exception ex) {
+                log.error("Error trying to submit response for ExecuteDeviceCommand");
+            }
+        }
     }
 
     public interface ShudownAware {
@@ -199,6 +221,7 @@ public class ControllerSessionHandler {
         long controllerId = 0;
         if (user != null && user.getAccount() != null
                 && user.getAccount().getControllers() != null
+                && !user.getAccount().getControllers().isEmpty()
                 && user.getAccount().getControllers().get(0) != null) {
             controllerId = user.getAccount().getControllers().get(0).getOid();
         }
