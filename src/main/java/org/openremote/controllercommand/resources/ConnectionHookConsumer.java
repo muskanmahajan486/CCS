@@ -20,7 +20,6 @@
  */
 package org.openremote.controllercommand.resources;
 
-import org.openremote.controllercommand.ControllerProxyAndCommandServiceApplication;
 import org.slf4j.LoggerFactory;
 
 import javax.websocket.Session;
@@ -44,18 +43,16 @@ public class ConnectionHookConsumer implements Runnable {
     private final String baseUri;
     private final String openPath;
     private final String closePath;
-    private final ControllerProxyAndCommandServiceApplication controllerProxyAndCommandServiceApplication;
     private final Map<String, Payload> connectedControllerByUser;
     private final Map<String, Session> sessions;
     private final ControllerSessionHandler.ShudownAware isShutdown;
     private final long retryTimeout;
 
-    public ConnectionHookConsumer(BlockingQueue<String> queue, String baseUri, String openPath, String closePath, ControllerProxyAndCommandServiceApplication controllerProxyAndCommandServiceApplication, Map<String, Payload> connectedControllerByUser, Map<String, Session> sessions, ControllerSessionHandler.ShudownAware isShutdown, long retryTimeout) {
+    public ConnectionHookConsumer(BlockingQueue<String> queue, String baseUri, String openPath, String closePath, Map<String, Payload> connectedControllerByUser, Map<String, Session> sessions, ControllerSessionHandler.ShudownAware isShutdown, long retryTimeout) {
         this.queue = queue;
         this.baseUri = baseUri;
         this.openPath = openPath;
         this.closePath = closePath;
-        this.controllerProxyAndCommandServiceApplication = controllerProxyAndCommandServiceApplication;
         this.connectedControllerByUser = connectedControllerByUser;
         this.sessions = sessions;
         this.isShutdown = isShutdown;
@@ -69,7 +66,7 @@ public class ConnectionHookConsumer implements Runnable {
 
         try {
             while (!isShutdown.isShutdownInProgress()) {
-                String user = queue.poll(1, TimeUnit.SECONDS);
+                String user = queue.poll(15, TimeUnit.SECONDS);
                 if (user != null && connectedControllerByUser.containsKey(user)) {
                     try {
                         String path = sessions.containsKey(user) ? openPath : closePath;
@@ -81,10 +78,11 @@ public class ConnectionHookConsumer implements Runnable {
                         int status = response.getStatus();
                         if (status >= 400 && status != 503) {
                             log.error("WS notification get fatal response code :" + status);
-                        } else if (status == 200 && path.equals(closePath)) {
-                            connectedControllerByUser.remove(user);
-                        } else {
+                        } else if (status != 200) {
                             processServerError(user, status, null);
+                        } else if (path.equals(closePath)) {
+                            //Case status 200 and Close => remove connected Controller  (notification close Success)
+                            connectedControllerByUser.remove(user);
                         }
 
                     } catch (ProcessingException | WebApplicationException ex) {

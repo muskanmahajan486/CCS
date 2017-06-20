@@ -61,7 +61,7 @@ public class ControllerSessionHandler {
         this.baseUri = baseUri;
         this.exectuteCommandResponsePath = executeCommandResponsePath;
         stateNotificationQueue = new ArrayBlockingQueue<>(1000); //TODO check sizing for real usecase
-        ConnectionHookConsumer stateConsumer = new ConnectionHookConsumer(stateNotificationQueue, baseUri, openPath, closePath, controllerProxyAndCommandServiceApplication, connectedControllerByUser, sessions, new ShudownAware() {
+        ConnectionHookConsumer stateConsumer = new ConnectionHookConsumer(stateNotificationQueue, baseUri, openPath, closePath, connectedControllerByUser, sessions, new ShudownAware() {
             @Override
             public boolean isShutdownInProgress() {
                 return shutdownInProgress;
