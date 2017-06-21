@@ -78,6 +78,9 @@ public class ConnectionHookConsumer implements Runnable {
                         int status = response.getStatus();
                         if (status >= 400 && status != 503) {
                             log.error("WS notification get fatal response code :" + status);
+                           if (path.equals(closePath)) {
+                               connectedControllerByUser.remove(user);
+                           }
                         } else if (status != 200) {
                             processServerError(user, status, null);
                         } else if (path.equals(closePath)) {
