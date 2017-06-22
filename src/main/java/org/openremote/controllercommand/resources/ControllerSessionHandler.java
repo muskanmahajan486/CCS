@@ -198,7 +198,7 @@ public class ControllerSessionHandler {
         } catch (Exception ex) {
             controllerProxyAndCommandServiceApplication.rollbackEntityManager(entityManager);
         }
-        controllerProxyAndCommandServiceApplication.commitEntityManager(entityManager);
+
 
         if (controllerCommand.getType() == ControllerCommandDTO.Type.EXECUTE_DEVICE_COMMAND) {
             //send rest to hms
@@ -206,11 +206,16 @@ public class ControllerSessionHandler {
                 Response response = client.target(baseUri)
                         .path(exectuteCommandResponsePath)
                         .request()
-                        .post(Entity.json(controllerCommand));
+                        .post(Entity.json(new JSONSerializer().exclude("*.class").serialize(controllerCommand)));
+                if( response.getStatus() != 200) {
+                    log.error("Error trying to submit response for ExecuteDeviceCommand, received status code:"+ response.getStatus());
+                }
             } catch (Exception ex) {
                 log.error("Error trying to submit response for ExecuteDeviceCommand");
             }
         }
+
+        controllerProxyAndCommandServiceApplication.commitEntityManager(entityManager);
     }
 
     public interface ShudownAware {

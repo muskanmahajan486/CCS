@@ -1,0 +1,78 @@
+Implementation of EXECUTE_CONTROLLER_COMMAND through CCS
+=========================================================
+
+To execute a controller device command through CCS we ADDED a new command TYPE: EXECUTE_DEVICE_COMMAND
+
+ex POST endpoint for command (BASIC auth with user with account link to the controller}
+
+{CCS_BASE_URI}/ccs/rest/command
+
+BODY :
+{
+  "type" : "EXECUTE_DEVICE_COMMAND",
+  "deviceName": "Test device",
+  "commandName":"My command",
+  "parameter" : "My Parameter"
+}
+
+return ex:
+{
+    "errorMessage": null,
+    "result": {
+    "commandName": "My command name",
+    "creationDate": 1498135325383,
+    "deviceName": "My device name",
+    "oid": 41,
+    "parameter": "My parameter",
+    "state": "OPEN",
+    "type": "EXECUTE_DEVICE_COMMAND"
+}
+
+there is a new GET endpoint to get status of the command :
+
+{CCS_BASE_URI}/ccs/rest/command/{commandOid}
+
+will return :
+
+{
+    "errorMessage": null,
+    "result": {
+        "account": {
+            "oid": 2
+        },
+        "commandName": "My command name",
+        "creationDate": 1498135325000,
+        "deviceName": "My device name",
+        "oid": 41,
+        "parameter": "My parameter",
+        "state": "FAILED", //could be OPEN, DONE, FAILED
+        "type": "EXECUTE_DEVICE_COMMAND"
+   }
+}
+
+
+Once the controller has executed the command it send result back to CCS
+    CCS POST rest endpoint (without auth) defined by properties wsHook.executeCommandResponsePath (default :/executeCommandResponse)
+ will post
+{
+         "account": {
+             "oid": 2
+         },
+         "commandName": "My command name",
+         "creationDate": 1498135325000,
+         "deviceName": "My device name",
+         "oid": 41,
+         "parameter": "My parameter",
+         "state": "FAILED",
+         "type": "EXECUTE_DEVICE_COMMAND"
+}
+
+//
+
+// TEST STATUS:
+
+integration test :
+
+TEST POST COMMAND endpoint
+TEST GET COMMAND endpoint
+

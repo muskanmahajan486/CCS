@@ -170,7 +170,7 @@ public class ControllerCommandResource {
             log.error("Error getting controller commands", e);
             result = new GenericResourceResultWithErrorMessage(e.getMessage(), null);
         }
-        return Response.ok(new JSONSerializer().exclude("*.class").deepSerialize(result)).build();
+        return Response.ok(new JSONSerializer().exclude("*.class").serialize(result)).build();
     }
 
     private EntityManager getEntityManager(HttpServletRequest request) {
