@@ -41,7 +41,7 @@ public class CommandRetrieverThread extends Thread {
                   try {
                      controllerSessionHandler.sendToController(user.getUsername(), command);
                   } catch (WSException e) {
-                     log.info("Error on sending WS command",e);
+                     log.info("Error on sending WS command, user "+user.getUsername()+"command :"+command.getOid() ,e);
                   }
                }
             }

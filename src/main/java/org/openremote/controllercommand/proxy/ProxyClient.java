@@ -355,7 +355,7 @@ public class ProxyClient extends Proxy {
           try {
              controllerSessionHandler.sendToController(user.getUsername(), new JSONObject(new JSONSerializer().exclude("*.class").deepSerialize(resultForWS)));
           } catch (WSException e) {
-             logger.info("Proxy command could not be send");
+             logger.info("Proxy command could not be send, user : "+user.getUsername()  +", command : "+command.getOid());
           }
        } catch (JSONException e) {
           throw new RuntimeException(e);
