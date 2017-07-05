@@ -107,7 +107,7 @@ public class ControllerCommandResource {
             try {
                 ControllerCommandDTO.Type type = Type.valueOf(typeAsString.trim().toUpperCase());
                 if (Type.DOWNLOAD_DESIGN != type && Type.EXECUTE_DEVICE_COMMAND != type) {
-                    throw new BadRequestException("Unsupported command type");
+                    throw new BadRequestException("Unsupported command type from user : " + username);
                 }
                 ControllerCommand command;
                 if (Type.EXECUTE_DEVICE_COMMAND == type) {
@@ -125,28 +125,25 @@ public class ControllerCommandResource {
                 try {
                     controllerSessionHandler.sendToController(user.getUsername(), command);
                 } catch (WSException e) {
-                    log.info("Error on sending WS command", e);
+                    log.info("Error on sending WS command, username: " + username, e);
                 }
                 return Response.ok(new JSONSerializer().exclude("*.class").exclude("result.account").deepSerialize(result)).build();
             } catch (IllegalArgumentException e) {
-                throw new BadRequestException("Unknown command type");
+                throw new BadRequestException("Unknown command type from user : " + username);
             }
         } catch (JSONException e) {
-            throw new BadRequestException("Invalid JSON payload");
+            throw new BadRequestException("Invalid JSON payload from user : " + username);
         }
     }
 
     @GET
     @Path("command/{controllerCommandOid}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response loadControllerCommands(@Context HttpServletRequest request, @PathParam("controllerCommandOid") String controllerCommandOid)
-    {
+    public Response loadControllerCommands(@Context HttpServletRequest request, @PathParam("controllerCommandOid") String controllerCommandOid) {
         GenericResourceResultWithErrorMessage result = null;
-        try
-        {
+        try {
 
-            if (controllerCommandOid != null)
-            {
+            if (controllerCommandOid != null) {
                 log.info("Asked to get command id " + controllerCommandOid);
                 Long id = Long.valueOf(controllerCommandOid);
 
@@ -158,15 +155,14 @@ public class ControllerCommandResource {
                     result = new GenericResourceResultWithErrorMessage(null, command);
                 } else {
                     log.info("Username mismatch");
-                    result = new GenericResourceResultWithErrorMessage("User is not allowed to retrieve command +"+id ,null);
+                    result = new GenericResourceResultWithErrorMessage("User is not allowed to retrieve command +" + id, null);
 
                 }
             } else {
                 log.info("No command oid provided");
                 result = new GenericResourceResultWithErrorMessage(null, null);
             }
-        } catch (Exception e)
-        {
+        } catch (Exception e) {
             log.error("Error getting controller commands", e);
             result = new GenericResourceResultWithErrorMessage(e.getMessage(), null);
         }

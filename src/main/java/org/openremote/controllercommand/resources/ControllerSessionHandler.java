@@ -126,7 +126,7 @@ public class ControllerSessionHandler {
             try {
                 sendToController(username, openCommand);
             } catch (WSException e) {
-                log.info("Error trying to send OPEN Controller Command", e);
+                log.info("Error trying to send OPEN Controller Command for user : " + username, e);
             }
         }
         controllerProxyAndCommandServiceApplication.commitEntityManager(entityManager);

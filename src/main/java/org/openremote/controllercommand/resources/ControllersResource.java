@@ -68,7 +68,7 @@ public class ControllersResource {
             }
             result = new GenericResourceResultWithErrorMessage(null, payloads);
         } catch (Exception e) {
-            log.error("Error getting controllers", e);
+            log.error("Error getting controllers for user : " + username, e);
             result = new GenericResourceResultWithErrorMessage(e.getMessage(), null);
         }
         return Response.ok(new JSONSerializer().exclude("*.class").deepSerialize(result)).build();

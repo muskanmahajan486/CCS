@@ -77,7 +77,7 @@ public class ConnectionHookConsumer implements Runnable {
                                 .post(Entity.json(connectedControllerByUser.get(user)));
                         int status = response.getStatus();
                         if (status >= 400 && status != 503) {
-                            log.error("WS notification get fatal response code :" + status);
+                            log.error("WS notification get fatal response code :" + status + " for user : " + user);
                            if (path.equals(closePath)) {
                                connectedControllerByUser.remove(user);
                            }
@@ -101,10 +101,10 @@ public class ConnectionHookConsumer implements Runnable {
 
     private void processServerError(String user, Integer status, RuntimeException ex) throws InterruptedException {
         if (status != null) {
-            log.info("WS notification get wrong response code : " + status + " retry in " + retryTimeout + " ms");
+            log.info("WS notification get wrong response code : " + status + " retry in " + retryTimeout + " ms" + " for user" + user);
         }
         if (ex != null) {
-            log.info("WS notification get exception:", ex);
+            log.info("WS notification get exception for user : " + user, ex);
         }
         queue.put(user);
         Thread.sleep(retryTimeout);
