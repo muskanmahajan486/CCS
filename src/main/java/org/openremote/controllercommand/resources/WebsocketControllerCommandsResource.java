@@ -13,20 +13,23 @@ public class WebsocketControllerCommandsResource {
 
     @OnOpen
     public void open(Session session) {
-        log.debug("WS open for user : " +  session.getUserPrincipal().getName());
+        log.debug("WS opening for user : " +  session.getUserPrincipal().getName());
         ControllerSessionHandler.getInstance().addSession(session);
+        log.debug("WS open done for user : " + session.getUserPrincipal().getName());
     }
 
     @OnClose
     public void close(Session session) {
-        log.debug("WS close for user : " + session.getUserPrincipal().getName());
+        log.debug("WS closing for user : " + session.getUserPrincipal().getName());
         ControllerSessionHandler.getInstance().removeSession(session);
+        log.debug("WS close done for user : " + session.getUserPrincipal().getName());
     }
 
     @OnMessage
     public void handleMessage(String message, Session session) {
-        log.debug("WS message for user : " + session.getUserPrincipal().getName());
+        log.debug("WS handling message for user : " + session.getUserPrincipal().getName());
         ControllerSessionHandler.getInstance().handleMessage(message);
+        log.debug("WS message handle for user : " + session.getUserPrincipal().getName());
     }
 
     @OnError
