@@ -157,15 +157,16 @@ public class ControllerSessionHandler {
     }
 
     public void sendToController(String username, JSONObject message) throws WSException {
-
-        Session session = sessions.get(username);
-        if (session != null && session.isOpen()) {
-            sendToSession(session, message);
-        } else {
-            if (session != null) {
-                removeSession(session);
+        synchronized (this) {
+            Session session = sessions.get(username);
+            if (session != null && session.isOpen()) {
+                sendToSession(session, message);
+            } else {
+                if (session != null) {
+                    removeSession(session);
+                }
+                throw new WSException("No session for user : " + username);
             }
-            throw new WSException("No session for user : " + username);
         }
     }
 

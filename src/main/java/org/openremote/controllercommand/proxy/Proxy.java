@@ -77,14 +77,14 @@ public abstract class Proxy extends Thread {
             // requests and responses may be asynchronous.
             Thread t = new Thread() {
               public void run() {
-                int bytes_read;
+                int bytes_read = 0;
                 try {
                   while ((bytes_read = from_client.read(request)) != -1) {
                     to_server.write(request, 0, bytes_read);
                     to_server.flush();
                   }
                 } catch (IOException e) {
-                  e.printStackTrace();
+                   logger.error("Error During proxy, bytes read :"+bytes_read,e);
                 }
 
                 // the client closed the connection to us, so close our
