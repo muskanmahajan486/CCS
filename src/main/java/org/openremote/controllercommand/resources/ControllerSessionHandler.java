@@ -25,6 +25,7 @@ import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -61,7 +62,7 @@ public class ControllerSessionHandler {
         this.baseUri = baseUri;
         this.exectuteCommandResponsePath = executeCommandResponsePath;
         stateNotificationQueue = new ArrayBlockingQueue<>(1000); //TODO check sizing for real usecase
-        ConnectionHookConsumer stateConsumer = new ConnectionHookConsumer(stateNotificationQueue, baseUri, openPath, closePath, connectedControllerByUser, sessions, new ShudownAware() {
+        ConnectionHookConsumer stateConsumer = new ConnectionHookConsumer(stateNotificationQueue, baseUri, openPath, closePath, connectedControllerByUser, Collections.unmodifiableMap(sessions), new ShudownAware() {
             @Override
             public boolean isShutdownInProgress() {
                 return shutdownInProgress;
@@ -114,7 +115,20 @@ public class ControllerSessionHandler {
 
         String username = session.getUserPrincipal().getName();
         /*retrieve openCommandForUser*/
-        sessions.put(username, session);
+
+        synchronized (this) {
+               Session oldSession = sessions.remove(username);
+               try {
+                   if (oldSession != null) {
+                       oldSession.close();
+                   }
+               } catch (IOException e) {
+                  log.info("Error closing older websocket");
+               }
+
+           sessions.put(username, session);
+        }
+
         EntityManager entityManager = controllerProxyAndCommandServiceApplication.createEntityManager();
 
         Payload payload = getPayload(username, accountService.loadByUsername(entityManager, username));
@@ -143,7 +157,12 @@ public class ControllerSessionHandler {
 
 
     public void removeSession(Session session) {
-        sessions.remove(session.getUserPrincipal().getName());
+        synchronized (this) {
+            Session oldSession = sessions.get(session.getUserPrincipal().getName());
+            if (oldSession != null && session.getId().equals(oldSession.getId())) {
+               sessions.remove(session.getUserPrincipal().getName());
+           }
+        }
         notifyConnection(session.getUserPrincipal().getName());
     }
 
