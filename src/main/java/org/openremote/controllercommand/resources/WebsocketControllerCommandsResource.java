@@ -19,10 +19,15 @@ public class WebsocketControllerCommandsResource {
     }
 
     @OnClose
-    public void close(Session session) {
-        log.info("WS closing for user : " + session.getUserPrincipal().getName());
+    public void close(Session session,CloseReason closeReason) {
+        if (closeReason != null) {
+            log.info("WS closing ["+ closeReason.toString() +"] for user : " + session.getUserPrincipal().getName());
+        } else {
+            log.info("WS closing for user : " + session.getUserPrincipal().getName());
+        }
         ControllerSessionHandler.getInstance().removeSession(session);
         log.info("WS close done for user : " + session.getUserPrincipal().getName());
+
     }
 
     @OnMessage
@@ -39,7 +44,7 @@ public class WebsocketControllerCommandsResource {
             username = session.getUserPrincipal().getName();
         }
         log.error("WS Error for user : " + username, error);
-        close(session);
+        close(session, new CloseReason( CloseReason.CloseCodes.CLOSED_ABNORMALLY, error.getMessage()));
     }
 
 }
