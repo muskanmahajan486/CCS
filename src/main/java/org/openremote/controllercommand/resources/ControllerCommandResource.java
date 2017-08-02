@@ -106,7 +106,7 @@ public class ControllerCommandResource {
             }
             try {
                 ControllerCommandDTO.Type type = Type.valueOf(typeAsString.trim().toUpperCase());
-                if (Type.DOWNLOAD_DESIGN != type && Type.EXECUTE_DEVICE_COMMAND != type && Type.UPDATE_CONTROLLER != type) {
+                if (Type.DOWNLOAD_DESIGN != type && Type.EXECUTE_DEVICE_COMMAND != type && Type.INCREMENTAL_DESIGN_UPDATE != type) {
                     throw new BadRequestException("Unsupported command type from user : " + username);
                 }
                 ControllerCommand command;
