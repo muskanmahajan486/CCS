@@ -54,8 +54,9 @@ public class ConnectionHookConsumerTest
     @PrepareForTest(ClientBuilder.class)
     public void openOk() throws InterruptedException {
 
-        BlockingQueue<String> queue = mock(BlockingQueue.class);
-        when(queue.poll(15, TimeUnit.SECONDS)).thenReturn("user1");
+        BlockingQueue<Payload> queue = mock(BlockingQueue.class);
+        Payload payload = new Payload("user1",0l,"127.0.0.1");
+        when(queue.poll(15, TimeUnit.SECONDS)).thenReturn(payload);
         Client client = mock(Client.class);
         PowerMockito.mockStatic(ClientBuilder.class);
         when(ClientBuilder.newClient()).thenReturn(client);
@@ -64,17 +65,16 @@ public class ConnectionHookConsumerTest
         when(client.target(BASE_URI)).thenReturn(webTarget);
         Invocation.Builder builder = mock(Invocation.Builder.class);
         when(webTarget.request()).thenReturn(builder);
-        Payload payload = new Payload("user1",0l,"127.0.0.1");
         Response response = mock(Response.class);
         when(builder.post(Entity.json(payload))).thenReturn(response);
         when(response.getStatus()).thenReturn(200);
 
-        connectedControllerByUser.put("user1",payload );
+
         sessions.put("user1",new Object());
 
-        ConnectionHookConsumer consumer = new ConnectionHookConsumer(queue, BASE_URI, OPEN_PATH, CLOSE_PATH, connectedControllerByUser, sessions, isShutdown, RETRY_TIMEOUT);
+        ConnectionHookConsumer consumer = new ConnectionHookConsumer(queue, BASE_URI, OPEN_PATH, CLOSE_PATH, sessions, isShutdown, RETRY_TIMEOUT);
         consumer.run();
-        verify(queue, never()).put("user1");
+        verify(queue, never()).put(payload);
     }
 
 
@@ -82,8 +82,9 @@ public class ConnectionHookConsumerTest
     @PrepareForTest(ClientBuilder.class)
     public void open404() throws InterruptedException {
 
-        BlockingQueue<String> queue = mock(BlockingQueue.class);
-        when(queue.poll(15, TimeUnit.SECONDS)).thenReturn("user1");
+        BlockingQueue<Payload> queue = mock(BlockingQueue.class);
+        Payload payload = new Payload("user1",0l,"127.0.0.1");
+        when(queue.poll(15, TimeUnit.SECONDS)).thenReturn(payload);
         Client client = mock(Client.class);
         PowerMockito.mockStatic(ClientBuilder.class);
         when(ClientBuilder.newClient()).thenReturn(client);
@@ -92,26 +93,26 @@ public class ConnectionHookConsumerTest
         when(client.target(BASE_URI)).thenReturn(webTarget);
         Invocation.Builder builder = mock(Invocation.Builder.class);
         when(webTarget.request()).thenReturn(builder);
-        Payload payload = new Payload("user1",0l,"127.0.0.1");
         Response response = mock(Response.class);
         when(builder.post(Entity.json(payload))).thenReturn(response);
         when(response.getStatus()).thenReturn(404);
 
-        connectedControllerByUser.put("user1",payload );
+
         sessions.put("user1",new Object());
 
-        ConnectionHookConsumer consumer = new ConnectionHookConsumer(queue, BASE_URI, OPEN_PATH, CLOSE_PATH, connectedControllerByUser, sessions, isShutdown, RETRY_TIMEOUT);
+        ConnectionHookConsumer consumer = new ConnectionHookConsumer(queue, BASE_URI, OPEN_PATH, CLOSE_PATH, sessions, isShutdown, RETRY_TIMEOUT);
         consumer.run();
-        verify(queue, never()).put("user1");
-        assertTrue(connectedControllerByUser.containsKey("user1"));
+        verify(queue, never()).put(payload);
+
     }
 
     @Test
     @PrepareForTest(ClientBuilder.class)
     public void open300() throws InterruptedException {
 
-        BlockingQueue<String> queue = mock(BlockingQueue.class);
-        when(queue.poll(15, TimeUnit.SECONDS)).thenReturn("user1");
+        BlockingQueue<Payload> queue = mock(BlockingQueue.class);
+        Payload payload = new Payload("user1",0l,"127.0.0.1");
+        when(queue.poll(15, TimeUnit.SECONDS)).thenReturn(payload);
         Client client = mock(Client.class);
         PowerMockito.mockStatic(ClientBuilder.class);
         when(ClientBuilder.newClient()).thenReturn(client);
@@ -120,18 +121,15 @@ public class ConnectionHookConsumerTest
         when(client.target(BASE_URI)).thenReturn(webTarget);
         Invocation.Builder builder = mock(Invocation.Builder.class);
         when(webTarget.request()).thenReturn(builder);
-        Payload payload = new Payload("user1",0l,"127.0.0.1");
         Response response = mock(Response.class);
         when(builder.post(Entity.json(payload))).thenReturn(response);
         when(response.getStatus()).thenReturn(300);
 
-        connectedControllerByUser.put("user1",payload );
         sessions.put("user1",new Object());
 
-        ConnectionHookConsumer consumer = new ConnectionHookConsumer(queue, BASE_URI, OPEN_PATH, CLOSE_PATH, connectedControllerByUser, sessions, isShutdown, RETRY_TIMEOUT);
+        ConnectionHookConsumer consumer = new ConnectionHookConsumer(queue, BASE_URI, OPEN_PATH, CLOSE_PATH, sessions, isShutdown, RETRY_TIMEOUT);
         consumer.run();
-        verify(queue).put("user1");
-        assertTrue(connectedControllerByUser.containsKey("user1"));
+        verify(queue).put(payload);
     }
 
 
@@ -139,8 +137,9 @@ public class ConnectionHookConsumerTest
     @Test
     @PrepareForTest(ClientBuilder.class)
     public void closeOk() throws InterruptedException {
-        BlockingQueue<String> queue = mock(BlockingQueue.class);
-        when(queue.poll(15, TimeUnit.SECONDS)).thenReturn("user1");
+        BlockingQueue<Payload> queue = mock(BlockingQueue.class);
+        Payload payload = new Payload("user1",0l,"127.0.0.1");
+        when(queue.poll(15, TimeUnit.SECONDS)).thenReturn(payload);
         Client client = mock(Client.class);
         PowerMockito.mockStatic(ClientBuilder.class);
         when(ClientBuilder.newClient()).thenReturn(client);
@@ -149,17 +148,14 @@ public class ConnectionHookConsumerTest
         when(client.target(BASE_URI)).thenReturn(webTarget);
         Invocation.Builder builder = mock(Invocation.Builder.class);
         when(webTarget.request()).thenReturn(builder);
-        Payload payload = new Payload("user1",0l,"127.0.0.1");
         Response response = mock(Response.class);
         when(builder.post(Entity.json(payload))).thenReturn(response);
         when(response.getStatus()).thenReturn(200);
 
-        connectedControllerByUser.put("user1",payload);
-
-        ConnectionHookConsumer consumer = new ConnectionHookConsumer(queue, BASE_URI, OPEN_PATH, CLOSE_PATH, connectedControllerByUser, sessions, isShutdown, RETRY_TIMEOUT);
+        ConnectionHookConsumer consumer = new ConnectionHookConsumer(queue, BASE_URI, OPEN_PATH, CLOSE_PATH, sessions, isShutdown, RETRY_TIMEOUT);
         consumer.run();
-        assertTrue(connectedControllerByUser.isEmpty());
-        verify(queue, never()).put("user1");
+
+        verify(queue, never()).put(payload);
     }
 
 
@@ -168,8 +164,9 @@ public class ConnectionHookConsumerTest
     @Test
     @PrepareForTest(ClientBuilder.class)
     public void close404() throws InterruptedException {
-        BlockingQueue<String> queue = mock(BlockingQueue.class);
-        when(queue.poll(15, TimeUnit.SECONDS)).thenReturn("user1");
+        BlockingQueue<Payload> queue = mock(BlockingQueue.class);
+        Payload payload = new Payload("user1",0l,"127.0.0.1");
+        when(queue.poll(15, TimeUnit.SECONDS)).thenReturn(payload);
         Client client = mock(Client.class);
         PowerMockito.mockStatic(ClientBuilder.class);
         when(ClientBuilder.newClient()).thenReturn(client);
@@ -178,25 +175,23 @@ public class ConnectionHookConsumerTest
         when(client.target(BASE_URI)).thenReturn(webTarget);
         Invocation.Builder builder = mock(Invocation.Builder.class);
         when(webTarget.request()).thenReturn(builder);
-        Payload payload = new Payload("user1",0l,"127.0.0.1");
         Response response = mock(Response.class);
         when(builder.post(Entity.json(payload))).thenReturn(response);
         when(response.getStatus()).thenReturn(404);
 
-        connectedControllerByUser.put("user1",payload);
-
-        ConnectionHookConsumer consumer = new ConnectionHookConsumer(queue, BASE_URI, OPEN_PATH, CLOSE_PATH, connectedControllerByUser, sessions, isShutdown, RETRY_TIMEOUT);
+        ConnectionHookConsumer consumer = new ConnectionHookConsumer(queue, BASE_URI, OPEN_PATH, CLOSE_PATH, sessions, isShutdown, RETRY_TIMEOUT);
         consumer.run();
-        assertTrue(connectedControllerByUser.isEmpty());
-        verify(queue, never()).put("user1");
+
+        verify(queue, never()).put(payload);
     }
 
 
     @Test
     @PrepareForTest(ClientBuilder.class)
     public void close300() throws InterruptedException {
-        BlockingQueue<String> queue = mock(BlockingQueue.class);
-        when(queue.poll(15, TimeUnit.SECONDS)).thenReturn("user1");
+        BlockingQueue<Payload> queue = mock(BlockingQueue.class);
+        Payload payload = new Payload("user1",0l,"127.0.0.1");
+        when(queue.poll(15, TimeUnit.SECONDS)).thenReturn(payload);
         Client client = mock(Client.class);
         PowerMockito.mockStatic(ClientBuilder.class);
         when(ClientBuilder.newClient()).thenReturn(client);
@@ -205,17 +200,14 @@ public class ConnectionHookConsumerTest
         when(client.target(BASE_URI)).thenReturn(webTarget);
         Invocation.Builder builder = mock(Invocation.Builder.class);
         when(webTarget.request()).thenReturn(builder);
-        Payload payload = new Payload("user1",0l,"127.0.0.1");
         Response response = mock(Response.class);
         when(builder.post(Entity.json(payload))).thenReturn(response);
         when(response.getStatus()).thenReturn(300);
 
-        connectedControllerByUser.put("user1",payload);
-        ConnectionHookConsumer consumer = new ConnectionHookConsumer(queue, BASE_URI, OPEN_PATH, CLOSE_PATH, connectedControllerByUser, sessions, isShutdown, RETRY_TIMEOUT);
+        ConnectionHookConsumer consumer = new ConnectionHookConsumer(queue, BASE_URI, OPEN_PATH, CLOSE_PATH, sessions, isShutdown, RETRY_TIMEOUT);
         consumer.run();
 
-        assertTrue(connectedControllerByUser.containsKey("user1"));
-        verify(queue).put("user1");
+        verify(queue).put(payload);
     }
 
 }
