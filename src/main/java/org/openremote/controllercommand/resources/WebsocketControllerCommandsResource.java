@@ -13,28 +13,28 @@ public class WebsocketControllerCommandsResource {
 
     @OnOpen
     public void open(Session session) {
-        log.info("WS opening for user : " +  session.getUserPrincipal().getName());
+        log.info("WS["+ session.getId()+"] opening for user : " +  session.getUserPrincipal().getName());
         ControllerSessionHandler.getInstance().addSession(session);
-        log.info("WS open done for user : " + session.getUserPrincipal().getName());
+        log.info("WS["+ session.getId()+"] open done for user : " + session.getUserPrincipal().getName());
     }
 
     @OnClose
     public void close(Session session,CloseReason closeReason) {
         if (closeReason != null) {
-            log.info("WS closing ["+ closeReason.toString() +"] for user : " + session.getUserPrincipal().getName());
+            log.info("WS["+ session.getId()+"] closing ["+ closeReason.toString() +"] for user : " + session.getUserPrincipal().getName());
         } else {
-            log.info("WS closing for user : " + session.getUserPrincipal().getName());
+            log.info("WS["+ session.getId()+"] closing for user : " + session.getUserPrincipal().getName());
         }
         ControllerSessionHandler.getInstance().removeSession(session);
-        log.info("WS close done for user : " + session.getUserPrincipal().getName());
+        log.info("WS["+ session.getId()+"] close done for user : " + session.getUserPrincipal().getName());
 
     }
 
     @OnMessage
     public void handleMessage(String message, Session session) {
-        log.info("WS handling message for user : " + session.getUserPrincipal().getName());
+        log.info("WS["+ session.getId()+"] handling message for user : " + session.getUserPrincipal().getName());
         ControllerSessionHandler.getInstance().handleMessage(message);
-        log.info("WS message handle for user : " + session.getUserPrincipal().getName());
+        log.info("WS["+ session.getId()+"] message handle for user : " + session.getUserPrincipal().getName());
     }
 
     @OnError
@@ -43,7 +43,7 @@ public class WebsocketControllerCommandsResource {
         if (session != null && session.getUserPrincipal() != null) {
             username = session.getUserPrincipal().getName();
         }
-        log.error("WS Error for user : " + username, error);
+        log.error("WS["+ session.getId()+"] Error for user : " + username, error);
         close(session, new CloseReason( CloseReason.CloseCodes.CLOSED_ABNORMALLY, error.getMessage()));
     }
 

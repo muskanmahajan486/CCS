@@ -39,7 +39,7 @@ public class ControllerSessionHandler {
 
     private ControllerCommandService controllerCommandService;
 
-    private BlockingQueue<String> stateNotificationQueue;
+    private BlockingQueue<Payload> stateNotificationQueue;
 
     private ControllerProxyAndCommandServiceApplication controllerProxyAndCommandServiceApplication;
     private AccountService accountService;
@@ -62,7 +62,7 @@ public class ControllerSessionHandler {
         this.baseUri = baseUri;
         this.exectuteCommandResponsePath = executeCommandResponsePath;
         stateNotificationQueue = new ArrayBlockingQueue<>(1000); //TODO check sizing for real usecase
-        ConnectionHookConsumer stateConsumer = new ConnectionHookConsumer(stateNotificationQueue, baseUri, openPath, closePath, connectedControllerByUser, Collections.unmodifiableMap(sessions), new ShudownAware() {
+        ConnectionHookConsumer stateConsumer = new ConnectionHookConsumer(stateNotificationQueue, baseUri, openPath, closePath, Collections.unmodifiableMap(sessions), new ShudownAware() {
             @Override
             public boolean isShutdownInProgress() {
                 return shutdownInProgress;
@@ -116,10 +116,15 @@ public class ControllerSessionHandler {
         String username = session.getUserPrincipal().getName();
         /*retrieve openCommandForUser*/
 
+        EntityManager entityManager = controllerProxyAndCommandServiceApplication.createEntityManager();
+        Payload payload = getPayload(username, accountService.loadByUsername(entityManager, username));
+
         synchronized (this) {
                Session oldSession = sessions.remove(username);
+
                try {
                    if (oldSession != null) {
+                       log.info("Removed session id "+ oldSession.getId());
                        oldSession.close();
                    }
                } catch (IOException e) {
@@ -127,13 +132,13 @@ public class ControllerSessionHandler {
                }
 
            sessions.put(username, session);
+           connectedControllerByUser.put(username,payload);
+           log.info("Added session id "+ session.getId());
         }
 
-        EntityManager entityManager = controllerProxyAndCommandServiceApplication.createEntityManager();
 
-        Payload payload = getPayload(username, accountService.loadByUsername(entityManager, username));
-        connectedControllerByUser.put(username,payload);
-        notifyConnection(username);
+
+        notifyConnection(payload);
 
         List<ControllerCommand> openCommands = controllerCommandService.findControllerCommandByStatusAndUsername(entityManager, ControllerCommand.State.OPEN, username);
         for (ControllerCommand openCommand : openCommands) {
@@ -147,9 +152,9 @@ public class ControllerSessionHandler {
 
     }
 
-    private void notifyConnection(String user) {
+    private void notifyConnection(Payload payload) {
         try {
-            stateNotificationQueue.put(user);
+            stateNotificationQueue.put(payload);
         } catch (InterruptedException e) {
             log.error("inQueue interupted", e);
         }
@@ -157,13 +162,18 @@ public class ControllerSessionHandler {
 
 
     public void removeSession(Session session) {
+        Payload payload = null;
         synchronized (this) {
             Session oldSession = sessions.get(session.getUserPrincipal().getName());
             if (oldSession != null && session.getId().equals(oldSession.getId())) {
                sessions.remove(session.getUserPrincipal().getName());
+                payload = connectedControllerByUser.remove(session.getUserPrincipal().getName());
+                log.info("Removed session Id " + oldSession.getId());
            }
         }
-        notifyConnection(session.getUserPrincipal().getName());
+        if (payload != null) {
+            notifyConnection(payload);
+        }
     }
 
     public void sendToController(String username, ControllerCommand command) throws WSException {

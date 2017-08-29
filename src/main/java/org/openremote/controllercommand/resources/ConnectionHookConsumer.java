@@ -35,7 +35,7 @@ import java.util.concurrent.TimeUnit;
 
 public class ConnectionHookConsumer implements Runnable {
 
-    private final BlockingQueue<String> queue;
+    private final BlockingQueue<Payload> queue;
 
     protected final static org.slf4j.Logger log = LoggerFactory.getLogger(ConnectionHookConsumer.class);
 
@@ -43,17 +43,16 @@ public class ConnectionHookConsumer implements Runnable {
     private final String baseUri;
     private final String openPath;
     private final String closePath;
-    private final Map<String, Payload> connectedControllerByUser;
+
     private final Map<String, Session> sessions;
     private final ControllerSessionHandler.ShudownAware isShutdown;
     private final long retryTimeout;
 
-    public ConnectionHookConsumer(BlockingQueue<String> queue, String baseUri, String openPath, String closePath, Map<String, Payload> connectedControllerByUser, Map<String, Session> sessions, ControllerSessionHandler.ShudownAware isShutdown, long retryTimeout) {
+    public ConnectionHookConsumer(BlockingQueue<Payload> queue, String baseUri, String openPath, String closePath, Map<String, Session> sessions, ControllerSessionHandler.ShudownAware isShutdown, long retryTimeout) {
         this.queue = queue;
         this.baseUri = baseUri;
         this.openPath = openPath;
         this.closePath = closePath;
-        this.connectedControllerByUser = connectedControllerByUser;
         this.sessions = sessions;
         this.isShutdown = isShutdown;
         this.retryTimeout = retryTimeout;
@@ -66,30 +65,25 @@ public class ConnectionHookConsumer implements Runnable {
 
         try {
             while (!isShutdown.isShutdownInProgress()) {
-                String user = queue.poll(15, TimeUnit.SECONDS);
-                if (user != null && connectedControllerByUser.containsKey(user)) {
+                Payload payload = queue.poll(15, TimeUnit.SECONDS);
+                if (payload != null) {
                     try {
-                        String path = sessions.containsKey(user) ? openPath : closePath;
+                        String path = sessions.containsKey(payload.getUsername()) ? openPath : closePath;
 
                         Response response = client.target(baseUri)
                                 .path(path)
                                 .request()
-                                .post(Entity.json(connectedControllerByUser.get(user)));
+                                .post(Entity.json(payload));
                         int status = response.getStatus();
                         if (status >= 400 && status != 503) {
-                            log.error("WS notification get fatal response code :" + status + " for user : " + user);
-                           if (path.equals(closePath)) {
-                               connectedControllerByUser.remove(user);
-                           }
+                            log.error("WS notification get fatal response code :" + status + " for user : " + payload.getUsername());
+
                         } else if (status != 200) {
-                            processServerError(user, status, null);
-                        } else if (path.equals(closePath)) {
-                            //Case status 200 and Close => remove connected Controller  (notification close Success)
-                            connectedControllerByUser.remove(user);
+                            processServerError(payload, status, null);
                         }
 
                     } catch (ProcessingException | WebApplicationException ex) {
-                        processServerError(user, null, ex);
+                        processServerError(payload, null, ex);
                     }
                 }
             }
@@ -99,14 +93,14 @@ public class ConnectionHookConsumer implements Runnable {
         }
     }
 
-    private void processServerError(String user, Integer status, RuntimeException ex) throws InterruptedException {
+    private void processServerError(Payload payload, Integer status, RuntimeException ex) throws InterruptedException {
         if (status != null) {
-            log.info("WS notification get wrong response code : " + status + " retry in " + retryTimeout + " ms" + " for user" + user);
+            log.info("WS notification get wrong response code : " + status + " retry in " + retryTimeout + " ms" + " for user" + payload.getUsername());
         }
         if (ex != null) {
-            log.info("WS notification get exception for user : " + user, ex);
+            log.info("WS notification get exception for user : " + payload.getUsername(), ex);
         }
-        queue.put(user);
+        queue.put(payload);
         Thread.sleep(retryTimeout);
     }
 
