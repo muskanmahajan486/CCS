@@ -44,7 +44,6 @@ public class WebsocketControllerCommandsResource {
             username = session.getUserPrincipal().getName();
         }
         log.error("WS["+ session.getId()+"] Error for user : " + username, error);
-        close(session, new CloseReason( CloseReason.CloseCodes.CLOSED_ABNORMALLY, error.getMessage()));
     }
 
 }
