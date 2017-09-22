@@ -217,35 +217,40 @@ public class ControllerSessionHandler {
                 .deserialize(message);
 
         ControllerCommand controllerCommand = controllerCommandService.findControllerCommandById(entityManager, res.getOid());
-        if (res.getCommandTypeEnum().equals(ControllerCommandResponseDTO.Type.SUCCESS)) {
-            controllerCommandService.closeControllerCommand(controllerCommand);
+        if (controllerCommand == null) {
+            log.error("ControllerCommand with id :"+ res.getOid()+" could not be found");
         } else {
-            controllerCommandService.markFailedControllerCommand(controllerCommand);
-        }
-        try {
-            controllerCommandService.update(entityManager, controllerCommand);
-            controllerProxyAndCommandServiceApplication.commitEntityManager(entityManager);
-        } catch (Exception ex) {
-            controllerProxyAndCommandServiceApplication.rollbackEntityManager(entityManager);
-        }
-
-
-        if (controllerCommand.getType() == ControllerCommandDTO.Type.EXECUTE_DEVICE_COMMAND) {
-            //send rest to hms
-            try {
-                Response response = client.target(baseUri)
-                        .path(exectuteCommandResponsePath)
-                        .request()
-                        .post(Entity.json(new JSONSerializer().exclude("*.class").serialize(controllerCommand)));
-                if( response.getStatus() != 200) {
-                    log.error("Error trying to submit response for ExecuteDeviceCommand, received status code:"+ response.getStatus());
-                }
-            } catch (Exception ex) {
-                log.error("Error trying to submit response for ExecuteDeviceCommand");
+            if (res.getCommandTypeEnum().equals(ControllerCommandResponseDTO.Type.SUCCESS)) {
+                controllerCommandService.closeControllerCommand(controllerCommand);
+            } else {
+                controllerCommandService.markFailedControllerCommand(controllerCommand);
             }
+            try {
+                controllerCommandService.update(entityManager, controllerCommand);
+                controllerProxyAndCommandServiceApplication.commitEntityManager(entityManager);
+            } catch (Exception ex) {
+                controllerProxyAndCommandServiceApplication.rollbackEntityManager(entityManager);
+            }
+
+
+            if (controllerCommand.getType() == ControllerCommandDTO.Type.EXECUTE_DEVICE_COMMAND) {
+                //send rest to hms
+                try {
+                    Response response = client.target(baseUri)
+                            .path(exectuteCommandResponsePath)
+                            .request()
+                            .post(Entity.json(new JSONSerializer().exclude("*.class").serialize(controllerCommand)));
+                    if( response.getStatus() != 200) {
+                        log.error("Error trying to submit response for ExecuteDeviceCommand, received status code:"+ response.getStatus());
+                    }
+                } catch (Exception ex) {
+                    log.error("Error trying to submit response for ExecuteDeviceCommand");
+                }
+            }
+            controllerProxyAndCommandServiceApplication.commitEntityManager(entityManager);
         }
 
-        controllerProxyAndCommandServiceApplication.commitEntityManager(entityManager);
+
     }
 
     public interface ShudownAware {

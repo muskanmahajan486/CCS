@@ -35,6 +35,8 @@ import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
+import javax.persistence.EntityTransaction;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
@@ -93,9 +95,10 @@ public class ControllerCommandResource {
             throw new BadRequestException("No data received");
         }
 
+        EntityManager entityManager = getEntityManager(request).getEntityManagerFactory().createEntityManager();
         String username = request.getUserPrincipal().getName();
 
-        User user = accountService.loadByUsername(getEntityManager(request), username);
+        User user = accountService.loadByUsername(entityManager, username);
         Account account = user.getAccount();
 
         try {
@@ -119,8 +122,15 @@ public class ControllerCommandResource {
                     command = new ControllerCommand(account, type);
 
                 }
-                controllerCommandService.save(getEntityManager(request), command);
-
+                EntityTransaction transaction = entityManager.getTransaction();
+                transaction.begin();
+                try {
+                    controllerCommandService.save(entityManager, command);
+                    transaction.commit();
+                } catch (Exception ex) {
+                    transaction.rollback();
+                    throw ex;
+                }
                 GenericResourceResultWithErrorMessage result = new GenericResourceResultWithErrorMessage(null, command);
                 try {
                     controllerSessionHandler.sendToController(user.getUsername(), command);
