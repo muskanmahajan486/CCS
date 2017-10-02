@@ -96,12 +96,14 @@ public class ControllerCommandResource {
         }
 
         EntityManager entityManager = getEntityManager(request).getEntityManagerFactory().createEntityManager();
-        String username = request.getUserPrincipal().getName();
-
-        User user = accountService.loadByUsername(entityManager, username);
-        Account account = user.getAccount();
-
+        String username = null;
         try {
+            username = request.getUserPrincipal().getName();
+
+            User user = accountService.loadByUsername(entityManager, username);
+            Account account = user.getAccount();
+
+
             JSONObject jsonData = new JSONObject(jsonString);
             String typeAsString = jsonData.getString("type");
             if (typeAsString == null) {
@@ -131,6 +133,7 @@ public class ControllerCommandResource {
                     transaction.rollback();
                     throw ex;
                 }
+
                 GenericResourceResultWithErrorMessage result = new GenericResourceResultWithErrorMessage(null, command);
                 try {
                     controllerSessionHandler.sendToController(user.getUsername(), command);
@@ -143,6 +146,8 @@ public class ControllerCommandResource {
             }
         } catch (JSONException e) {
             throw new BadRequestException("Invalid JSON payload from user : " + username);
+        } finally {
+            entityManager.close();
         }
     }
 
