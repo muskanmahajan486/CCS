@@ -57,7 +57,7 @@ public class ControllerSessionHandler {
 
     }
 
-    public void prepareConnectionNotification(String baseUri,String executeCommandResponsePath, String openPath, String closePath, String ccsIp, long retryTimeout) {
+    public void prepareConnectionNotification(String baseUri, String executeCommandResponsePath, String openPath, String closePath, String ccsIp, long retryTimeout) {
         this.ccsIp = ccsIp;
         this.baseUri = baseUri;
         this.exectuteCommandResponsePath = executeCommandResponsePath;
@@ -117,38 +117,41 @@ public class ControllerSessionHandler {
         /*retrieve openCommandForUser*/
 
         EntityManager entityManager = controllerProxyAndCommandServiceApplication.createEntityManager();
-        Payload payload = getPayload(username, accountService.loadByUsername(entityManager, username));
+        try {
+            Payload payload = getPayload(username, accountService.loadByUsername(entityManager, username));
+            synchronized (this) {
 
-        synchronized (this) {
-               Session oldSession = sessions.remove(username);
+                Session oldSession = sessions.remove(username);
 
-               try {
-                   if (oldSession != null) {
-                       log.info("Removed session id "+ oldSession.getId());
-                       oldSession.close();
-                   }
-               } catch (IOException e) {
-                  log.info("Error closing older websocket");
-               }
+                try {
+                    if (oldSession != null) {
+                        log.info("Removed session id " + oldSession.getId());
+                        oldSession.close();
+                    }
+                } catch (IOException e) {
+                    log.info("Error closing older websocket");
+                }
 
-           sessions.put(username, session);
-           connectedControllerByUser.put(username,payload);
-           log.info("Added session id "+ session.getId());
-        }
-
-
-
-        notifyConnection(payload);
-
-        List<ControllerCommand> openCommands = controllerCommandService.findControllerCommandByStatusAndUsername(entityManager, ControllerCommand.State.OPEN, username);
-        for (ControllerCommand openCommand : openCommands) {
-            try {
-                sendToController(username, openCommand);
-            } catch (WSException e) {
-                log.info("Error trying to send OPEN Controller Command for user : " + username, e);
+                sessions.put(username, session);
+                connectedControllerByUser.put(username, payload);
+                log.info("Added session id " + session.getId());
             }
+
+
+
+            notifyConnection(payload);
+
+            List<ControllerCommand> openCommands = controllerCommandService.findControllerCommandByStatusAndUsername(entityManager, ControllerCommand.State.OPEN, username);
+            for (ControllerCommand openCommand : openCommands) {
+                try {
+                    sendToController(username, openCommand);
+                } catch (WSException e) {
+                    log.info("Error trying to send OPEN Controller Command for user : " + username, e);
+                }
+            }
+        } finally {
+            controllerProxyAndCommandServiceApplication.commitEntityManager(entityManager);
         }
-        controllerProxyAndCommandServiceApplication.commitEntityManager(entityManager);
 
     }
 
@@ -166,10 +169,10 @@ public class ControllerSessionHandler {
         synchronized (this) {
             Session oldSession = sessions.get(session.getUserPrincipal().getName());
             if (oldSession != null && session.getId().equals(oldSession.getId())) {
-               sessions.remove(session.getUserPrincipal().getName());
+                sessions.remove(session.getUserPrincipal().getName());
                 payload = connectedControllerByUser.remove(session.getUserPrincipal().getName());
                 log.info("Removed session Id " + oldSession.getId());
-           }
+            }
         }
         if (payload != null) {
             notifyConnection(payload);
@@ -212,41 +215,45 @@ public class ControllerSessionHandler {
 
     public void handleMessage(String message) {
         EntityManager entityManager = controllerProxyAndCommandServiceApplication.createEntityManager();
-        ControllerCommandResponseDTO res = new JSONDeserializer<ControllerCommandResponseDTO>()
-                .use(null, ControllerCommandResponseDTO.class)
-                .deserialize(message);
+        try {
+            ControllerCommandResponseDTO res = new JSONDeserializer<ControllerCommandResponseDTO>()
+                    .use(null, ControllerCommandResponseDTO.class)
+                    .deserialize(message);
 
-        ControllerCommand controllerCommand = controllerCommandService.findControllerCommandById(entityManager, res.getOid());
-        if (controllerCommand == null) {
-            log.error("ControllerCommand with id :"+ res.getOid()+" could not be found");
-        } else {
-            if (res.getCommandTypeEnum().equals(ControllerCommandResponseDTO.Type.SUCCESS)) {
-                controllerCommandService.closeControllerCommand(controllerCommand);
+            ControllerCommand controllerCommand = controllerCommandService.findControllerCommandById(entityManager, res.getOid());
+            if (controllerCommand == null) {
+                log.error("ControllerCommand with id :" + res.getOid() + " could not be found");
             } else {
-                controllerCommandService.markFailedControllerCommand(controllerCommand);
-            }
-            try {
-                controllerCommandService.update(entityManager, controllerCommand);
-                controllerProxyAndCommandServiceApplication.commitEntityManager(entityManager);
-            } catch (Exception ex) {
-                controllerProxyAndCommandServiceApplication.rollbackEntityManager(entityManager);
-            }
-
-
-            if (controllerCommand.getType() == ControllerCommandDTO.Type.EXECUTE_DEVICE_COMMAND) {
-                //send rest to hms
-                try {
-                    Response response = client.target(baseUri)
-                            .path(exectuteCommandResponsePath)
-                            .request()
-                            .post(Entity.json(new JSONSerializer().exclude("*.class").serialize(controllerCommand)));
-                    if( response.getStatus() != 200) {
-                        log.error("Error trying to submit response for ExecuteDeviceCommand, received status code:"+ response.getStatus());
-                    }
-                } catch (Exception ex) {
-                    log.error("Error trying to submit response for ExecuteDeviceCommand");
+                if (res.getCommandTypeEnum().equals(ControllerCommandResponseDTO.Type.SUCCESS)) {
+                    controllerCommandService.closeControllerCommand(controllerCommand);
+                } else {
+                    controllerCommandService.markFailedControllerCommand(controllerCommand);
                 }
+                try {
+                    controllerCommandService.update(entityManager, controllerCommand);
+                    controllerProxyAndCommandServiceApplication.commitEntityManager(entityManager);
+                } catch (Exception ex) {
+                    controllerProxyAndCommandServiceApplication.rollbackEntityManager(entityManager);
+                }
+
+
+                if (controllerCommand.getType() == ControllerCommandDTO.Type.EXECUTE_DEVICE_COMMAND) {
+                    //send rest to hms
+                    try {
+                        Response response = client.target(baseUri)
+                                .path(exectuteCommandResponsePath)
+                                .request()
+                                .post(Entity.json(new JSONSerializer().exclude("*.class").serialize(controllerCommand)));
+                        if (response.getStatus() != 200) {
+                            log.error("Error trying to submit response for ExecuteDeviceCommand, received status code:" + response.getStatus());
+                        }
+                    } catch (Exception ex) {
+                        log.error("Error trying to submit response for ExecuteDeviceCommand");
+                    }
+                }
+
             }
+        } finally {
             controllerProxyAndCommandServiceApplication.commitEntityManager(entityManager);
         }
 
@@ -254,7 +261,7 @@ public class ControllerSessionHandler {
     }
 
     public interface ShudownAware {
-       boolean isShutdownInProgress();
+        boolean isShutdownInProgress();
     }
 
     private Payload getPayload(String username, User user) {
