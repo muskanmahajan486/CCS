@@ -119,24 +119,21 @@ public class ControllerSessionHandler {
         EntityManager entityManager = controllerProxyAndCommandServiceApplication.createEntityManager();
         try {
             Payload payload = getPayload(username, accountService.loadByUsername(entityManager, username));
+            Session oldSession;
             synchronized (this) {
-
-                Session oldSession = sessions.remove(username);
-
-                try {
-                    if (oldSession != null) {
-                        log.info("Removed session id " + oldSession.getId());
-                        oldSession.close();
-                    }
-                } catch (IOException e) {
-                    log.info("Error closing older websocket");
-                }
-
+                oldSession = sessions.remove(username);
                 sessions.put(username, session);
                 connectedControllerByUser.put(username, payload);
-                log.info("Added session id " + session.getId());
             }
-
+            log.info("Added session id " + session.getId());
+            try {
+                if (oldSession != null) {
+                    oldSession.close();
+                    log.info("Removed session id " + oldSession.getId());
+                }
+            } catch (IOException e) {
+                log.info("Error closing older websocket");
+            }
 
 
             notifyConnection(payload);
