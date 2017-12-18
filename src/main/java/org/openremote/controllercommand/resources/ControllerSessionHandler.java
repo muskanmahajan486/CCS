@@ -50,17 +50,14 @@ public class ControllerSessionHandler {
     private final Map<String, Payload> connectedControllerByUser = new ConcurrentHashMap<>();
     private final Client client = ClientBuilder.newClient();
     private String ccsIp;
-    private String exectuteCommandResponsePath;
-    private String baseUri;
+
 
     private ControllerSessionHandler() {
 
     }
 
-    public void prepareConnectionNotification(String baseUri, String executeCommandResponsePath, String openPath, String closePath, String ccsIp, long retryTimeout) {
+    public void prepareConnectionNotification(String baseUri, String openPath, String closePath, String ccsIp, long retryTimeout) {
         this.ccsIp = ccsIp;
-        this.baseUri = baseUri;
-        this.exectuteCommandResponsePath = executeCommandResponsePath;
         stateNotificationQueue = new ArrayBlockingQueue<>(1000); //TODO check sizing for real usecase
         ConnectionHookConsumer stateConsumer = new ConnectionHookConsumer(stateNotificationQueue, baseUri, openPath, closePath, Collections.unmodifiableMap(sessions), new ShudownAware() {
             @Override
@@ -234,20 +231,23 @@ public class ControllerSessionHandler {
                 }
 
 
-                if (controllerCommand.getType() == ControllerCommandDTO.Type.EXECUTE_DEVICE_COMMAND) {
-                    //send rest to hms
-                    try {
-                        Response response = client.target(baseUri)
-                                .path(exectuteCommandResponsePath)
+                //send rest to hms
+                try {
+                    String callbackBaseUri = controllerCommand.getCallbackBaseUri();
+                    String callbackPath = controllerCommand.getCallbackPath();
+                    if (callbackBaseUri != null && !callbackBaseUri.isEmpty() && callbackPath != null && !callbackPath.isEmpty()) {
+                        Response response = client.target(callbackBaseUri)
+                                .path(callbackPath)
                                 .request()
                                 .post(Entity.json(new JSONSerializer().exclude("*.class").serialize(controllerCommand)));
                         if (response.getStatus() != 200) {
                             log.error("Error trying to submit response for ExecuteDeviceCommand, received status code:" + response.getStatus());
                         }
-                    } catch (Exception ex) {
-                        log.error("Error trying to submit response for ExecuteDeviceCommand");
                     }
+                } catch (Exception ex) {
+                    log.error("Error trying to submit response for ExecuteDeviceCommand");
                 }
+
 
             }
         } finally {

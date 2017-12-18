@@ -44,15 +44,15 @@ public class ControllerCommand extends BusinessEntity {
 	private Date creationDate;
 	private State state;
 	private ControllerCommandDTO.Type type;
-	
+	private String callbackBaseUri;
+	private String callbackPath;
 
-	
 	/**
 	 * State of the command. They start as OPEN, then are marked as DONE when they have been treated by
 	 * the controller.
 	 */
 	public enum State {
-		OPEN, DONE, FAILED;
+		OPEN, DONE, FAILED
 	}
 
 	public ControllerCommand() {
@@ -99,4 +99,21 @@ public class ControllerCommand extends BusinessEntity {
    public void setType(ControllerCommandDTO.Type type) {
       this.type = type;
    }
+
+	public String getCallbackBaseUri() {
+		return callbackBaseUri;
+	}
+
+	public void setCallbackBaseUri(String callbackBaseUri) {
+		this.callbackBaseUri = callbackBaseUri;
+	}
+
+	public String getCallbackPath() {
+		return callbackPath;
+	}
+
+	public void setCallbackPath(String callbackPath) {
+		this.callbackPath = callbackPath;
+	}
+
 }

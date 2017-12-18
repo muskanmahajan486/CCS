@@ -124,6 +124,8 @@ public class ControllerCommandResource {
                     command = new ControllerCommand(account, type);
 
                 }
+                command.setCallbackBaseUri(jsonData.optString("callbackBaseUri"));
+                command.setCallbackPath(jsonData.optString("callbackPath"));
                 EntityTransaction transaction = entityManager.getTransaction();
                 transaction.begin();
                 try {
