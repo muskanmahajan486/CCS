@@ -1,4 +1,5 @@
 apply plugin: "java"
+apply plugin: "jacoco" // run with gradle clean test jacocoTestReport
 apply plugin: "war"
 
 // TODO Must compile with JDK 1.7 http://www.draconianoverlord.com/2014/04/01/jdk-compatibility.html
